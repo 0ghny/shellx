@@ -1,0 +1,6 @@
+# .............................................................................
+# If dotnet command is present into the system, disable telemetry
+# .............................................................................
+command -v dotnet >/dev/null && return
+# . Don't send data to Microsoft
+export DOTNET_CLI_TELEMETRY_OPTOUT=yes
