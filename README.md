@@ -54,6 +54,7 @@ Wellcome is the bundled plugin as of demo purposes.
 
 ## Plugin framework
 
+
 ### Extend with plugins
 
 In short, just add .sh or .bash files into ~/.shellx/plugins folder and they will be loaded once your shell is restarted.
