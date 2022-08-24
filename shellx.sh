@@ -18,13 +18,13 @@ fi
 # .............................................................................
 #                                                                    [ GLOBAL ]
 # .............................................................................
-declare -ag __shellx_plugins_loaded
-declare -ag __shellx_plugins_locations
-declare -g __shellx_homedir="${SHELLX_HOME:-$(dirname ${_shellxLocation})}"
-declare -g __shellx_bindir="${SHELLX_BIN:-${__shellx_homedir}/bin}"
-declare -g __shellx_libdir="${SHELLX_LIB:-${__shellx_homedir}/lib}"
-declare -g __shellx_plugins_d="${SHELLX_PLUGINS_D:-${HOME}/.shellx.plugins.d}"
-declare -g __shellx_pluginsdir="${SHELLX_PLUGINS:-${__shellx_homedir}/plugins}"
+export __shellx_plugins_loaded=()
+export __shellx_plugins_locations=()
+export __shellx_homedir="${SHELLX_HOME:-$(dirname ${_shellxLocation})}"
+export __shellx_bindir="${SHELLX_BIN:-${__shellx_homedir}/bin}"
+export __shellx_libdir="${SHELLX_LIB:-${__shellx_homedir}/lib}"
+export __shellx_plugins_d="${SHELLX_PLUGINS_D:-${HOME}/.shellx.plugins.d}"
+export __shellx_pluginsdir="${SHELLX_PLUGINS:-${__shellx_homedir}/plugins}"
 declare -g __shellx_feature_loadtime_start="$__internal_init_time"
 declare -g __shellx_feature_loadtime_end="$__internal_init_time"
 # Debug output
@@ -82,14 +82,14 @@ done
 # __shellx_pluginsdir location
 if [[ -d "${__shellx_pluginsdir}" ]]; then
   [[ -n "${SHELLX_DEBUG}" ]] && echo "Bundled Plugins: Adding ${__shellx_pluginsdir} to location list"
-  __shellx_plugins_locations+=( "${__shellx_pluginsdir}" )
+  export __shellx_plugins_locations=( "${__shellx_pluginsdir}" )
 fi
 # SHELLX_PLUGINS_EXTRA location
 IFS=""
 for location in "${SHELLX_PLUGINS_EXTRA[@]}"; do
   if [[ -d "${location}" ]]; then
     [[ -n "${SHELLX_DEBUG}" ]] && echo "Extra Plugins: adding (${location}) to location list"
-    __shellx_plugins_locations+=( "${location}" )
+    export __shellx_plugins_locations=( "${__shellx_plugins_locations[*]}" "${location}" )
   fi
 done
 unset IFS location
@@ -98,7 +98,7 @@ if [ -d "${__shellx_plugins_d}" ]; then
   [[ -n "${SHELLX_DEBUG}" ]] && echo "shellx.plugins.d: folder found at ${__shellx_plugins_d}"
   for location in $(find "${__shellx_plugins_d}" -mindepth 1 -maxdepth 1 -type d -or -type l); do
     [[ -n "${SHELLX_DEBUG}" ]] && echo "shellx.plugins.d: adding ${location} to location list"
-    __shellx_plugins_locations+=( "${location}" )
+    export __shellx_plugins_locations=( "${__shellx_plugins_locations[*]}" "${location}" )
   done
 fi
 unset location
@@ -116,7 +116,7 @@ for location in "${__shellx_plugins_locations[@]}"; do
     if [[ -r "$file" ]]; then
       [[ -n "${SHELLX_DEBUG}" ]] && echo "Plugins Load: Loading plugin file ${file}"
       source "${file}"
-      __shellx_plugins_loaded+=( "$(basename "${file}")" )
+      export __shellx_plugins_loaded=( "${__shellx_plugins_loaded[*]}" "$(basename "${file}")" )
     fi
   done
   unset files_in_current_location
@@ -129,5 +129,6 @@ __shellx_feature_loadtime_end="$(date +%s)"
 # .............................................................................
 cat << EOF
  Plugins loaded: ${__shellx_plugins_loaded[*]:-0}
+ Plugins locations: ${__shellx_plugins_locations[*]:-unknown locations}
  Loaded in: $(time::to_human_readable "$(stopwatch::elapsed "$__shellx_feature_loadtime_start" "$__shellx_feature_loadtime_end")")
 EOF

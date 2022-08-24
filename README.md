@@ -52,9 +52,40 @@ Wellcome is the bundled plugin as of demo purposes.
 * Auto include in PATH folder ~/.bin and ~/.local/bin to have your binaries also in control
 * Extended Plugins: variable SHELLX_PLUGINS_EXTRA is an array of locations where (same as plugins folder) will be loaded. It helps you to allow to have your private plugins in another locations.
 
+## Bundled library of functions
+
+Shellx includes and load a library of functions that can be used inside any plugin but also from your shell session
+
+| LIB       | FUNC NAME               | DESCRIPTION                                                                              |
+| --------- | ----------------------- | ---------------------------------------------------------------------------------------- |
+| command   | command::get_type       | returns the type (as string) of a command by name, like "command,alias,function,builtin" |
+| command   | command::exists         | returns true if specified command exists as command,alias or function                    |
+| env       | env::export             | export a variable with a value                                                           |
+| env       | env::is_defined         | checks if a variable is already defined, returns true or false                           |
+| io        | io::exists              | returns true if the path (file or directory) exists, false if not                        |
+| path      | path::add               | adds a new path to the PATH variable (if not already added)                              |
+| path      | path::exists            | checks if a path is already in PATH variable                                             |
+| path      | path::export            | alias of path::add with a different implementation                                       |
+| shell     | shell::function_exists  | checks if a function is already defined, returns true or false                           |
+| shell     | shell::alias_exists     | checks if an alias is already defined, returns true or false                             |
+| stopwatch | stopwatch::capture      | returns the current date to use in stopwatch::elapsed operation                          |
+| stopwatch | stopwatch::elapsed      | elapsed time between startdate and enddate                                               |
+| sysinfo   | env::arch               | returns os architecture (386, amd64, arm, unknown)                                       |
+| sysinfo   | env::platform           | returns os platform (linux, darwin, unknown)                                             |
+| sysinfo   | env::uptime             | human readable and cross-os uptime                                                       |
+| time      | time::to_human_readable | from elapsed to human readable                                                           |
+| user      | user::current           | returns the name of the current user                                                     |
+
 ## Community plugins
 
 [Community Plugins repo](https://github.com/0ghny/shellx-community-plugins)
+
+to installs them, or any other repository with plugins:
+
+```shell
+git clone https://github.com/0ghny/shellx-community-plugins ~/.shellx.plugins.d/shellx-community-plugins
+# then, just restart your shell (e.g: exec zsh)
+```
 
 ## Plugin framework
 
