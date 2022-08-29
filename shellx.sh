@@ -126,9 +126,12 @@ unset file location
 __shellx_feature_loadtime_end="$(date +%s)"
 # .............................................................................
 #                                                                    [ BANNER ]
+# Shows a summary banner, can be skip with SHELLX_NO_BANNER variable
 # .............................................................................
+if [[ -z "${SHELLX_NO_BANNER}" ]]; then
 cat << EOF
  Plugins loaded: ${__shellx_plugins_loaded[*]:-0}
  Plugins locations: ${__shellx_plugins_locations[*]:-unknown locations}
  Loaded in: $(time::to_human_readable "$(stopwatch::elapsed "$__shellx_feature_loadtime_start" "$__shellx_feature_loadtime_end")")
 EOF
+fi
