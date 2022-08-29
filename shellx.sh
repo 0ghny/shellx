@@ -89,7 +89,7 @@ IFS=""
 for location in "${SHELLX_PLUGINS_EXTRA[@]}"; do
   if [[ -d "${location}" ]]; then
     [[ -n "${SHELLX_DEBUG}" ]] && echo "Extra Plugins: adding (${location}) to location list"
-    export __shellx_plugins_locations=( "${__shellx_plugins_locations[*]}" "${location}" )
+    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${location}" )
   fi
 done
 unset IFS location
@@ -98,7 +98,7 @@ if [ -d "${__shellx_plugins_d}" ]; then
   [[ -n "${SHELLX_DEBUG}" ]] && echo "shellx.plugins.d: folder found at ${__shellx_plugins_d}"
   for location in $(find "${__shellx_plugins_d}" -mindepth 1 -maxdepth 1 -type d -or -type l); do
     [[ -n "${SHELLX_DEBUG}" ]] && echo "shellx.plugins.d: adding ${location} to location list"
-    export __shellx_plugins_locations=( "${__shellx_plugins_locations[*]}" "${location}" )
+    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${location}" )
   done
 fi
 unset location
@@ -108,6 +108,7 @@ Plugins: Init loading of libraries
   __shellx_plugins_locations => ${__shellx_plugins_locations[@]}
 EOF
 for location in "${__shellx_plugins_locations[@]}"; do
+  [[ -n "${SHELLX_DEBUG}" ]] && echo "Plugins Load: finding scripts in location ${location}"
   IFS=$'\n'
   # shellcheck disable=SC2207
   files_in_current_location=($(find "${location}/" -type f -name '*.*sh'))
