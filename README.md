@@ -109,6 +109,34 @@ Shellx includes and load a library of functions that can be used inside any plug
 | time      | time::to_human_readable | from elapsed to human readable                                                           |
 | user      | user::current           | returns the name of the current user                                                     |
 
+## Selective plugins loading
+
+The core of shellx is to be able to add or remove functionality by plugins. Some or the allready existing community plugins are ready to skip their functionality if as example the tool is not present into the system. If `dotnet` is not installed, doesn't makes sense to export the OPTOUT variables to disable telemetry.
+
+But, even doing this, as much plugins you have, in some way, slower the bootstrap process will be.
+
+To avoid this, shellx offer a selective plugin feature, that, as default is `load all plugins`. But, remember that all `bundled` plugins will be always loaded.
+
+This configuration is done using the previously defined `SHELLX_PLUGINS` configuration property, which is an array that contains the plugins to be loaded. **BUT**, since a plugin can be named the same in different locations, we have offer different ways of specify `what to load`.
+
+- Load all: In this case `SHELLX_PLUGINS` should be valued `( @all )`. **This is the default value**
+- Load a location completely: Specify the name of the folder inside `shellx plugins d` directory with symbol '@' as prefix. In case of wanna load all community plugins installed, normally it will `( @shellx-community-plugins )`.
+- Load specific plugin from a location: location/plugin-name, like `@shellx-community-plugins/asdf` or `@shellx-community-plugins/pyenv`
+- Load all plugins that are named the same: just specify the name `asdf` or `pyenv` will load all plugins named asdf or pyenv in all locations.
+
+Some examples:
+
+```shell
+# Loads all plugins, in this case variable can be defined in this way, or not be defined
+SHELLX_PLUGINS=( @all )
+
+# Load all community plugins only (+ bundled)
+SHELLX_PLUGINS=( @shellx-community-plugins )
+
+# Load asdf from community plugins + custom cloned plugins repo in a folder called shellx-my-plugins
+SHELLX_PLUGINS( @shellx-community-plugins/asdf @shellx-my-plugins )
+```
+
 ## Community plugins
 
 [Community Plugins repo](https://github.com/0ghny/shellx-community-plugins)

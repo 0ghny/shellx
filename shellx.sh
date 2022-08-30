@@ -9,6 +9,7 @@ elif [[ "$_under" == *".sh" ]]; then
 else
   _shellxLocation="$0"
 fi
+
 # .............................................................................
 #                                               [ FEATURE: CONFIGURATION FILE ]
 # Locations by priority:
@@ -23,11 +24,10 @@ elif [[ -r "${HOME}"/.shellxrc ]]; then
 elif [[ -r "${HOME}"/.config/shellx/config ]]; then
   export __shellx_config="${HOME}"/.config/shellx/config
 else
-  [[ -n "${SHELLX_DEBUG}" ]] && echo "Config: no configuration file found"
+  ;
 fi
 
 if [[ -n "${__shellx_config}" ]]; then
-  [[ -n "${SHELLX_DEBUG}" ]] && echo "Config: loading configuration file from ${__shellx_config}"
   set -o allexport
   source "${__shellx_config}"
   set +o allexport
@@ -37,6 +37,8 @@ fi
 # .............................................................................
 export __shellx_plugins_loaded=()
 export __shellx_plugins_locations=()
+export __shellx_loaded_libraries=()
+
 export __shellx_homedir="${SHELLX_HOME:-$(dirname ${_shellxLocation})}"
 export __shellx_bindir="${__shellx_homedir}/bin"
 export __shellx_libdir="${__shellx_homedir}/lib"
@@ -44,36 +46,35 @@ export __shellx_plugins_d="${SHELLX_PLUGINS_D:-${HOME}/.shellx.plugins.d}"
 export __shellx_pluginsdir="${__shellx_homedir}/plugins"
 declare -g __shellx_feature_loadtime_start="$__internal_init_time"
 declare -g __shellx_feature_loadtime_end="$__internal_init_time"
-# Debug output
-[[ -n "${SHELLX_DEBUG}" ]] && cat << EOF
-  DEBUG Variables:
-  - __shellx_homedir      ${__shellx_homedir}
-  - __shellx_bindir       ${__shellx_bindir}
-  - __shellx_libdir:      ${__shellx_libdir}
-  - __shellx_plugins_d:   ${__shellx_plugins_d}
-  - __shellx_pluginsdir:  ${__shellx_pluginsdir}
-  - __shellx_config:      ${__shellx_config}
-EOF
 # .............................................................................
 #                                                                 [ LIBRARIES ]
 # .............................................................................
-[[ -n "${SHELLX_DEBUG}" ]] && echo "Feature: internal libs"
-for file in $(find "${__shellx_libdir}" -name '*.*sh'); do
+for file in $(find "${__shellx_libdir}" -name '*.*sh' | sort); do
   if [[ -r "${file}" ]]; then
-    [[ -n "${SHELLX_DEBUG}" ]] && echo "internal libs: loading library: ${file}"
-    builtin source "${file}"
+    source "${file}"
+    export __shellx_loaded_libraries=( ${__shellx_loaded_libraries[*]} "$(basename ${file})" )
   fi
 done
 unset file
 # .............................................................................
+#                                                                 [ DEBUG ]
+# .............................................................................
+shellx::log_debug "Loaded libraries: ${__shellx_loaded_libraries[*]}"
+shellx::log_debug "Variable __shellx_homedir      ${__shellx_homedir}"
+shellx::log_debug "Variable __shellx_bindir       ${__shellx_bindir}"
+shellx::log_debug "Variable __shellx_libdir:      ${__shellx_libdir}"
+shellx::log_debug "Variable __shellx_plugins_d:   ${__shellx_plugins_d}"
+shellx::log_debug "Variable __shellx_pluginsdir:  ${__shellx_pluginsdir}"
+shellx::log_debug "Variable __shellx_config:      ${__shellx_config}"
+# .............................................................................
 #                                                                [ HOME-EXTRA ]
 # .............................................................................
 if [[ -z "${SHELLX_SKIP_EXTRA}" ]]; then
-  [[ -n "${SHELLX_DEBUG}" ]] && echo "Feature: home-extra enabled"
+  shellx::log_debug "Feature: home-extra enabled"
   for file in "${HOME}"/.{path,exports,aliases,functions,extra}; do
     if [[ -r "${file}" ]]; then
-      [[ -n "${SHELLX_DEBUG}" ]] && echo "Loading home-extra file: ${file}"
-      builtin source "${file}"
+      shellx::log_debug "Loading home-extra file: ${file}"
+      source "${file}"
     fi
   done
   unset file
@@ -81,75 +82,98 @@ fi
 # .............................................................................
 #                                                               [ PATH-BACKUP ]
 # .............................................................................
-[[ -n "${SHELLX_DEBUG}" ]] && echo "Backing up PATH variable to SHELLX_PATH_BACKUP"
+shellx::log_debug "Backing up PATH variable to SHELLX_PATH_BACKUP"
 export SHELLX_PATH_BACKUP="${PATH}"
 # .............................................................................
 #                                                                       [ BIN ]
 # .............................................................................
-[[ -n "${SHELLX_DEBUG}" ]] && echo "Feature: Multi-Bin folder support"
+shellx::log_debug "Feature: Multi-Bin folder support"
 _PATHS=( "$HOME/bin" "$HOME/.local/bin" "${__shellx_bindir}")
 for _path in "${_PATHS[@]}"; do
-  [[ -n "${SHELLX_DEBUG}" ]] && echo "multi-bin: adding bin folder (${_path}) to PATH"
+  shellx::log_debug "multi-bin: adding bin folder (${_path}) to PATH"
   path::add "${_path}"
 done
 # .............................................................................
+#                                                           [ BUNDLED-PLUGINS ]
+# .............................................................................
+# BUNDLED PLUGINS: __shellx_pluginsdir location
+if [[ -d "${__shellx_pluginsdir}" ]]; then
+  shellx::log_debug "Bundled Plugins: Loading from ${__shellx_pluginsdir}"
+
+  IFS=$'\n'
+  # shellcheck disable=SC2207
+  files_in_current_location=($(find "${__shellx_pluginsdir}/" -type f -name '*.*sh'))
+  unset IFS
+  for file in "${files_in_current_location[@]}"; do
+    if [[ -r "$file" ]]; then
+      shellx::log_debug "Bundled Plugins: Loading bundledplugin file ${file}"
+      source "${file}"
+      export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@bundled/$(basename "${file}")" )
+    fi
+  done
+  unset files_in_current_location
+
+else
+  shellx::log_debug "Bundled Plugins: Cannot find bundled plugins directory or permissions are not correct."
+fi
+# .............................................................................
 #                                                                   [ PLUGINS ]
 # .............................................................................
-[[ -n "${SHELLX_DEBUG}" ]] && echo "Plugins feature enabled"
-# __shellx_pluginsdir location
-if [[ -d "${__shellx_pluginsdir}" ]]; then
-  [[ -n "${SHELLX_DEBUG}" ]] && echo "Bundled Plugins: Adding ${__shellx_pluginsdir} to location list"
-  export __shellx_plugins_locations=( "${__shellx_pluginsdir}" )
-fi
+shellx::log_debug "Plugins feature enabled"
 # SHELLX_PLUGINS_EXTRA location
 IFS=""
 for location in "${SHELLX_PLUGINS_EXTRA[@]}"; do
   if [[ -d "${location}" ]]; then
-    [[ -n "${SHELLX_DEBUG}" ]] && echo "Extra Plugins: adding (${location}) to location list"
+    shellx::log_debug "Extra Plugins: adding (${location}) to location list"
     export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${location}" )
   fi
 done
 unset IFS location
 # ~/.shellx.plugins.d location
 if [ -d "${__shellx_plugins_d}" ]; then
-  [[ -n "${SHELLX_DEBUG}" ]] && echo "shellx.plugins.d: folder found at ${__shellx_plugins_d}"
+  shellx::log_debug "shellx.plugins.d: folder found at ${__shellx_plugins_d}"
   for location in $(find "${__shellx_plugins_d}" -mindepth 1 -maxdepth 1 -type d -or -type l); do
-    [[ -n "${SHELLX_DEBUG}" ]] && echo "shellx.plugins.d: adding ${location} to location list"
+    shellx::log_debug "shellx.plugins.d: adding ${location} to location list"
     export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${location}" )
   done
 fi
 unset location
 # Plugins: load all plugins from all locations
-[[ -n "${SHELLX_DEBUG}" ]] && cat << EOF
-Plugins: Init loading of libraries
-  __shellx_plugins_locations => ${__shellx_plugins_locations[@]}
-EOF
+shellx::log_debug "__shellx_plugins_locations => ${__shellx_plugins_locations[@]}"
 for location in "${__shellx_plugins_locations[@]}"; do
-  [[ -n "${SHELLX_DEBUG}" ]] && echo "Plugins Load: finding scripts in location ${location}"
+  shellx::log_debug "Plugins Load: finding scripts in location ${location}"
   IFS=$'\n'
   # shellcheck disable=SC2207
   files_in_current_location=($(find "${location}/" -type f -name '*.*sh'))
   unset IFS
   for file in "${files_in_current_location[@]}"; do
     if [[ -r "$file" ]]; then
-      [[ -n "${SHELLX_DEBUG}" ]] && echo "Plugins Load: Loading plugin file ${file}"
+      shellx::log_debug "Plugins Load: Loading plugin file ${file}"
       source "${file}"
-      export __shellx_plugins_loaded=( "${__shellx_plugins_loaded[*]}" "$(basename "${file}")" )
+      export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@$(basename "${location}")/$(basename "${file}")" )
     fi
   done
   unset files_in_current_location
 done
 unset file location
-[[ -n "${SHELLX_DEBUG}" ]] && echo "Plugins: finish loading libraries"
+shellx::log_debug "Plugins: finish loading libraries"
 __shellx_feature_loadtime_end="$(date +%s)"
 # .............................................................................
 #                                                                    [ BANNER ]
 # Shows a summary banner, can be skip with SHELLX_NO_BANNER variable
 # .............................................................................
 if [[ -z "${SHELLX_NO_BANNER}" ]]; then
-cat << EOF
- Plugins loaded: ${__shellx_plugins_loaded[*]:-0}
- Plugins locations: ${__shellx_plugins_locations[*]:-unknown locations}
- Loaded in: $(time::to_human_readable "$(stopwatch::elapsed "$__shellx_feature_loadtime_start" "$__shellx_feature_loadtime_end")")
-EOF
+echo "ShellX initalised for $USER in $HOST"
+echo "  Plugin Locations:"
+echo "    - [@bundled] ${__shellx_pluginsdir}"
+for loc in "${__shellx_plugins_locations[@]}"; do
+echo "    - [@$(basename "${loc}")] ${loc}"
+done
+
+echo "  Plugins Loaded:"
+for plug in "${__shellx_plugins_loaded[@]}"; do
+echo "    - ${plug}"
+done
+echo "Loaded in: $(time::to_human_readable "$(stopwatch::elapsed "$__shellx_feature_loadtime_start" "$__shellx_feature_loadtime_end")")"
+unset loc plug
 fi
