@@ -52,6 +52,39 @@ Wellcome is the bundled plugin as of demo purposes.
 * Auto include in PATH folder ~/.bin and ~/.local/bin to have your binaries also in control
 * Extended Plugins: variable SHELLX_PLUGINS_EXTRA is an array of locations where (same as plugins folder) will be loaded. It helps you to allow to have your private plugins in another locations.
 
+## Configuration Options
+
+ShellX can be customized in behaviour using a configuration file which can be located in different places (in order or priority):
+
+- Environment variable `SHELLX_CONFIG`
+- ~/.shellxrc
+- ~/.config/shellx/config
+
+This file is loaded at bootstrapping time, so it's useful to avoid having to export variables before starting shellx in your shell session.
+
+Current configuration options are:
+
+| KEY              | DESCRIPTION                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| SHELLX_CONFIG    | If you wanna specify an specific location for your shellx configuration file             |
+| SHELLX_PLUGINS_D | By default it's `HOME/.shellx.plugins.d` but in case you wanna set another special location for searching for external plugins directory, you can use this variable |
+| SHELLX_NO_BANNER | If declared with any value, summary banner that contains session information, plugins loaded, etc. won't be displayed |
+| SHELLX_DEBUG     | If declared with any value, debug mode is enabled, lot's of output in your console       |
+| SHELLX_PLUGINS   | By default value is `@all` which means all plugins, it controls the plugin loading feature, you can read more about it in this documentation in `Selective plugin loading` section |
+| SHELLX_HOME      | If you wanna move shellx to another location, you can set that location in this variable, by default it will use the place where the `shellx.sh` script is. |
+
+## Bundled session variables
+
+When shellx is bootstrapped, there's some variables that can be used inside the session that belongs to shellx, it's quite important that you don't modify them if you don't want unexpected behaviours, but sometimes could be useful to use them in your scripts
+
+| NAME                    | DESCRIPTION                                   |
+| ----------------------- | --------------------------------------------- |
+| __shellx_plugins_loaded | array with list of loaded plugins by name     |
+| __shellx_homedir        | home directory for shellx installation        |
+| __shellx_bindir         | shellx installation bin directory             |
+| __shellx_libdir         | shellx installation lib directory             |
+| __shellx_plugins_d      | shellx extended plugins directory             |
+| __shellx_pluginsdir     | shellx installation bundled plugins directory |
 ## Bundled library of functions
 
 Shellx includes and load a library of functions that can be used inside any plugin but also from your shell session
@@ -89,23 +122,19 @@ git clone https://github.com/0ghny/shellx-community-plugins ~/.shellx.plugins.d/
 
 ## Plugin framework
 
-Plugins may use all internal variables and functions bundled in ShellX (in fact, they are declared in session so, you can access to them from your shell anytime)
+Plugins may use all internal variables and functions bundled in ShellX (in fact, they are declared in session so, you can access to them from your shell anytime).
 
-### Variables
+### Specific plugin configuration
 
-| NAME                    | DESCRIPTION                                   |
-| ----------------------- | --------------------------------------------- |
-| __shellx_plugins_loaded | array with list of loaded plugins by name     |
-| __shellx_homedir        | home directory for shellx installation        |
-| __shellx_bindir         | shellx installation bin directory             |
-| __shellx_libdir         | shellx installation lib directory             |
-| __shellx_plugins_d      | shellx extended plugins directory             |
-| __shellx_pluginsdir     | shellx installation bundled plugins directory |
+When you're developing or using a plugin you may want to define certain "variables" that can affect to the plugin behaviour, like, as example, determine if you want to download a binary for a tool or not in case that doesn't exists on the system.
+
+This is done using Feature Flags inside your plugin, basically you can use any variable named that you want, and the user can include that configuration in `ShellX configuration file` or exporting them into the shell before bootstrapping shellx, BUT, we recommend to follow (as we do) a naming pattern for those variables. Following our previous example, imagine a plugin that will install minikube in case it's not present into the system, you may create a variable called `SHELLX_PLUGIN_MINIKUBE_INSTALL_IF_NOT_PRESENT` or `SHELLX_PLUGIN_MINIKUBE_INSTALL` so basically `SHELLX_PLUGIN_MINIKUBE_` will be the prefix for your plugin variables. We do this to avoid conflicts with other tools or other plugins (even if this is almost impossible to ensure 100%), some people don't like LONG variable names, but, sometimes could be necessary.
 
 ### Extend with plugins
 
-In short, just add .sh or .bash files into ~/.shellx/plugins folder and they will be loaded once your shell is restarted.
-You can see some examples in folder `plugin-examples`.
+You can see some examples in folder `plugin-examples` or take a look or use [Community Plugins repo](https://github.com/0ghny/shellx-community-plugins).
+
+Create your own repository with your plugins and clone them inside `SHELLX_PLUGINS_D` directory (usually ~/.shellx.plugins.d/folder_name).
 
 Some ideas for plugins:
 

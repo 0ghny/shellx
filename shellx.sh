@@ -11,9 +11,26 @@ else
 fi
 # .............................................................................
 #                                               [ FEATURE: CONFIGURATION FILE ]
+# Locations by priority:
+#   1. ENV VAR: SHELLX_CONFIG
+#   2. $HOME/.shellxrc
+#   3. $HOME/.config/shellx/config
 # .............................................................................
-if [[ -f "${HOME}"/.shellxrc ]]; then
-  source "${HOME}"/.shellxrc
+if [[ -n "${SHELLX_CONFIG}" ]] && [[ -r "${SHELLX_CONFIG}" ]]; then
+  export __shellx_config="${SHELLX_CONFIG}"
+elif [[ -r "${HOME}"/.shellxrc ]]; then
+  export __shellx_config="${HOME}"/.shellxrc
+elif [[ -r "${HOME}"/.config/shellx/config ]]; then
+  export __shellx_config="${HOME}"/.config/shellx/config
+else
+  [[ -n "${SHELLX_DEBUG}" ]] && echo "Config: no configuration file found"
+fi
+
+if [[ -n "${__shellx_config}" ]]; then
+  [[ -n "${SHELLX_DEBUG}" ]] && echo "Config: loading configuration file from ${__shellx_config}"
+  set -o allexport
+  source "${__shellx_config}"
+  set +o allexport
 fi
 # .............................................................................
 #                                                                    [ GLOBAL ]
@@ -21,20 +38,21 @@ fi
 export __shellx_plugins_loaded=()
 export __shellx_plugins_locations=()
 export __shellx_homedir="${SHELLX_HOME:-$(dirname ${_shellxLocation})}"
-export __shellx_bindir="${SHELLX_BIN:-${__shellx_homedir}/bin}"
-export __shellx_libdir="${SHELLX_LIB:-${__shellx_homedir}/lib}"
+export __shellx_bindir="${__shellx_homedir}/bin"
+export __shellx_libdir="${__shellx_homedir}/lib"
 export __shellx_plugins_d="${SHELLX_PLUGINS_D:-${HOME}/.shellx.plugins.d}"
-export __shellx_pluginsdir="${SHELLX_PLUGINS:-${__shellx_homedir}/plugins}"
+export __shellx_pluginsdir="${__shellx_homedir}/plugins"
 declare -g __shellx_feature_loadtime_start="$__internal_init_time"
 declare -g __shellx_feature_loadtime_end="$__internal_init_time"
 # Debug output
 [[ -n "${SHELLX_DEBUG}" ]] && cat << EOF
   DEBUG Variables:
-  - __shellx_homedir      ${SHELLX_HOME:-$(dirname ${_shellxLocation})}
-  - __shellx_bindir       ${SHELLX_BIN:-${__shellx_homedir}/bin}
-  - __shellx_libdir:      ${SHELLX_LIB:-${__shellx_homedir}/lib}
-  - __shellx_plugins_d:   ${SHELLX_PLUGINS_D:-${HOME}/.shellx.plugins.d}
-  - __shellx_pluginsdir:  ${SHELLX_PLUGINS:-${__shellx_homedir}/plugins}
+  - __shellx_homedir      ${__shellx_homedir}
+  - __shellx_bindir       ${__shellx_bindir}
+  - __shellx_libdir:      ${__shellx_libdir}
+  - __shellx_plugins_d:   ${__shellx_plugins_d}
+  - __shellx_pluginsdir:  ${__shellx_pluginsdir}
+  - __shellx_config:      ${__shellx_config}
 EOF
 # .............................................................................
 #                                                                 [ LIBRARIES ]
@@ -78,7 +96,6 @@ done
 #                                                                   [ PLUGINS ]
 # .............................................................................
 [[ -n "${SHELLX_DEBUG}" ]] && echo "Plugins feature enabled"
-
 # __shellx_pluginsdir location
 if [[ -d "${__shellx_pluginsdir}" ]]; then
   [[ -n "${SHELLX_DEBUG}" ]] && echo "Bundled Plugins: Adding ${__shellx_pluginsdir} to location list"
