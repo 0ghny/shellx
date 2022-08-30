@@ -138,19 +138,44 @@ if [ -d "${__shellx_plugins_d}" ]; then
   done
 fi
 unset location
-# Plugins: load all plugins from all locations
+# PLUGINS LOAD
 shellx::log_debug "__shellx_plugins_locations => ${__shellx_plugins_locations[@]}"
+shellx::log_debug "selective plugin filter => ${SHELLX_PLUGINS[@]:-@all}"
 for location in "${__shellx_plugins_locations[@]}"; do
-  shellx::log_debug "Plugins Load: finding scripts in location ${location}"
+  shellx::log_debug "Plugins Load: reading scripts in location ${location}"
   IFS=$'\n'
   # shellcheck disable=SC2207
   files_in_current_location=($(find "${location}/" -type f -name '*.*sh'))
   unset IFS
   for file in "${files_in_current_location[@]}"; do
-    if [[ -r "$file" ]]; then
-      shellx::log_debug "Plugins Load: Loading plugin file ${file}"
-      source "${file}"
-      export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@$(basename "${location}")/$(basename "${file}")" )
+    shellx::log_debug "Applying selective filter to determine if plugin ${file} should be loaded"
+    # Selective loading feature
+    # 1. if SHELLX_PLUGINS contains @all or is not defined, load the plugin
+    should_load=0
+    if [[ -z "${SHELLX_PLUGINS}" ]] || [[ "${SHELLX_PLUGINS[*]}" =~ "@all" ]]; then
+      should_load=1
+    else
+      for token in "${SHELLX_PLUGINS[@]}"; do
+        if [[ "${token}" == "@$(basename "${location}")" ]] || \
+           [[ "${token}.sh" == "@$(basename "${location}")/$(basename "${file}")" ]] || \
+           [[ "${token}.sh" == "$(basename "${file}")" ]]; then
+           should_load=1
+           break
+        fi
+      done
+    fi
+
+    # Loadcheck, if should_load is 1
+    if [[ "${should_load}" -eq 1 ]]; then
+      if [[ -r "$file" ]]; then
+        shellx::log_debug "selective loading => loading ${file}"
+        source "${file}"
+        export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@$(basename "${location}")/$(basename "${file}")" )
+      else
+        shellx::log_warn "Plugin should be loaded but doesn't exists or is not readable, skipping."
+      fi
+    else
+      shellx::log_debug "selective loading => not loading"
     fi
   done
   unset files_in_current_location
