@@ -85,6 +85,7 @@ When shellx is bootstrapped, there's some variables that can be used inside the 
 | __shellx_libdir         | shellx installation lib directory             |
 | __shellx_plugins_d      | shellx extended plugins directory             |
 | __shellx_pluginsdir     | shellx installation bundled plugins directory |
+
 ## Bundled library of functions
 
 Shellx includes and load a library of functions that can be used inside any plugin but also from your shell session
