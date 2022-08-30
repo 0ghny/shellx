@@ -24,7 +24,7 @@ elif [[ -r "${HOME}"/.shellxrc ]]; then
 elif [[ -r "${HOME}"/.config/shellx/config ]]; then
   export __shellx_config="${HOME}"/.config/shellx/config
 else
-  ;
+  echo "ShellX Configuration file not found, applying defaults."
 fi
 
 if [[ -n "${__shellx_config}" ]]; then
@@ -188,7 +188,8 @@ __shellx_feature_loadtime_end="$(date +%s)"
 # Shows a summary banner, can be skip with SHELLX_NO_BANNER variable
 # .............................................................................
 if [[ -z "${SHELLX_NO_BANNER}" ]]; then
-echo "ShellX initalised for $USER in $HOST"
+echo "ShellX initalised for $USER in ${HOST:-${HOSTNAME:-Unknown}}"
+echo "  Libraries Loaded: ${__shellx_loaded_libraries[*]}"
 echo "  Plugin Locations:"
 echo "    - [@bundled] ${__shellx_pluginsdir}"
 for loc in "${__shellx_plugins_locations[@]}"; do
