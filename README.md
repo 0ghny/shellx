@@ -134,7 +134,10 @@ SHELLX_PLUGINS=( @all )
 SHELLX_PLUGINS=( @shellx-community-plugins )
 
 # Load asdf from community plugins + custom cloned plugins repo in a folder called shellx-my-plugins
-SHELLX_PLUGINS( @shellx-community-plugins/asdf @shellx-my-plugins )
+SHELLX_PLUGINS=( @shellx-community-plugins/asdf @shellx-my-plugins )
+
+# Load just plugins with names asdf,pyenv,minikube, in ALL locations
+SHELLX_PLUGINS=( asdf pyenv minikube )
 ```
 
 ## Community plugins
