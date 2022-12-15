@@ -1,4 +1,4 @@
-# shellcheck shell=bash
+# shellcheck shell=bash disable=SC2068,SC2154,SC2145
 
 # Log levels
 _shellx_loglevel_debug="${_color_green}DEBUG${_color_reset}"
@@ -18,8 +18,9 @@ shellx::__log_level() {
 # Generic log function
 shellx::log() {
   shellx::debug_enabled && \
-  echo "`date "+%Y/%m/%d %H:%M:%S"` [$(shellx::__log_level ${1:-DEBUG})] ${@:2:$#}"
+  echo "$(date "+%Y/%m/%d %H:%M:%S") [$(shellx::__log_level "${1:-DEBUG}")] ${@:2:$#}"
 }
+
 # Specific level log functions
 shellx::log_debug() { shellx::log "DEBUG" $@; }
 shellx::log_error() { shellx::log "ERROR" $@; }

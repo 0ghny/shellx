@@ -100,6 +100,7 @@ Shellx includes and load a library of functions that can be used inside any plug
 | path      | path::add               | adds a new path to the PATH variable (if not already added)                              |
 | path      | path::exists            | checks if a path is already in PATH variable                                             |
 | path      | path::export            | alias of path::add with a different implementation                                       |
+| path      | path::backup            | backups current PATH content into a variable (default PATH_BAK)                          |
 | shell     | shell::function_exists  | checks if a function is already defined, returns true or false                           |
 | shell     | shell::alias_exists     | checks if an alias is already defined, returns true or false                             |
 | stopwatch | stopwatch::capture      | returns the current date to use in stopwatch::elapsed operation                          |
@@ -109,6 +110,50 @@ Shellx includes and load a library of functions that can be used inside any plug
 | sysinfo   | env::uptime             | human readable and cross-os uptime                                                       |
 | time      | time::to_human_readable | from elapsed to human readable                                                           |
 | user      | user::current           | returns the name of the current user                                                     |
+
+## Plugins Management
+
+Shellx offer different functions that allows you to install/uninstall plugins created using `ShellX Plugin Framework guidelines` (read in sections below).
+Remember that by default all plugin commands operates with `SHELLX_PLUGINS_D` variable, which is the directory that contains plugins installed.
+
+| LIB              | FUNC NAME                  | DESCRIPTION                                                                            |
+| ---------------- | -------------------------- | -------------------------------------------------------------------------------------- |
+| shellx/plugins   | shellx::plugins::install   | with a git repository as parameter installs the plugin and reload plugins              |
+| shellx/plugins   | shellx::plugins::uninstall | with a plugin name as parameter uninstall the plugin from your shellx installation     |
+| shellx/plugins   | shellx::plugins::installed | prints current installed plugins and their location                                    |
+| shellx/plugins   | shellx::plugins::is_installed | with plugin name as parameter returns true or false if plugins is installed         |
+| shellx/plugins   | shellx::plugins::loaded    | prints current loaded plugins into shellx                                              |
+| shellx/plugins   | shellx::plugins::reload    | reload all plugins                                                                     |
+
+### Get current installed plugins
+
+```shell
+$ shellx::plugins::installed                                                                                                                                               ✔ 
+Plugisn Installed:
+  [*] plugins (~/.shellx/plugins)
+  [*] shellx-community-plugins (~/.shellx.plugins.d/shellx-community-plugins)
+  [*] shellx-plugins-arch (~/.shellx.plugins.d/shellx-plugins-arch)
+
+```
+
+### Installing a plugin
+
+Next example installs `shellx-plugins-arch` which contains plugins for arch linux
+
+```shell
+$ shellx::plugins::install https://github.com/0ghny/shellx-plugins-arch                                                                                                    ✔ 
+[PLUGIN] Cloning plugin into shellx plugins directory... OK
+[PLUGIN] Reloading plugins...
+```
+
+### Uninstalling a plugin
+
+Next example uninstall `shellx-plugins-arch` plugin
+
+```shell
+$ shellx::plugins::uninstall shellx-plugins-arch                                                                                                                           ✔ 
+[PLUGIN] shellx-plugins-arch uninstalling... OK
+```
 
 ## Selective plugins loading
 

@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# shellcheck disable=SC2120
+# shellcheck disable=SC2120,SC2155,SC2154,SC2053
 shellx::needs_update() {
   local __UPSTREAM=${1:-'@{u}'}
   local __REMOTE=$(git -C "${__shellx_homedir}" rev-parse "$__UPSTREAM")

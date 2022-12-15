@@ -29,6 +29,7 @@ fi
 
 if [[ -n "${__shellx_config}" ]]; then
   set -o allexport
+  # shellcheck disable=SC1090
   source "${__shellx_config}"
   set +o allexport
 fi
@@ -39,7 +40,7 @@ export __shellx_plugins_loaded=()
 export __shellx_plugins_locations=()
 export __shellx_loaded_libraries=()
 
-export __shellx_homedir="${SHELLX_HOME:-$(dirname ${_shellxLocation})}"
+export __shellx_homedir="${SHELLX_HOME:-$(dirname "${_shellxLocation}")}"
 export __shellx_bindir="${__shellx_homedir}/bin"
 export __shellx_libdir="${__shellx_homedir}/lib"
 export __shellx_plugins_d="${SHELLX_PLUGINS_D:-${HOME}/.shellx.plugins.d}"
@@ -49,13 +50,15 @@ declare -g __shellx_feature_loadtime_end="$__internal_init_time"
 # .............................................................................
 #                                                                 [ LIBRARIES ]
 # .............................................................................
-for file in $(find "${__shellx_libdir}" -name '*.*sh' | sort); do
-  if [[ -r "${file}" ]]; then
-    source "${file}"
-    export __shellx_loaded_libraries=( ${__shellx_loaded_libraries[*]} "$(basename ${file})" )
+for file_to_load in $(find "${__shellx_libdir}" -name '*.*sh' | sort); do
+  if [[ -r "${file_to_load}" ]]; then
+    # shellcheck source=/dev/null
+    source "${file_to_load}"
+    # shellcheck disable=SC2206
+    export __shellx_loaded_libraries=( ${__shellx_loaded_libraries[*]} "$(basename "${file_to_load}")" )
   fi
 done
-unset file
+unset file_to_load
 # .............................................................................
 #                                                                 [ DEBUG ]
 # .............................................................................
@@ -71,19 +74,20 @@ shellx::log_debug "Variable __shellx_config:      ${__shellx_config}"
 # .............................................................................
 if [[ -z "${SHELLX_SKIP_EXTRA}" ]]; then
   shellx::log_debug "Feature: home-extra enabled"
-  for file in "${HOME}"/.{path,exports,aliases,functions,extra}; do
-    if [[ -r "${file}" ]]; then
-      shellx::log_debug "Loading home-extra file: ${file}"
-      source "${file}"
+  for file_to_load in "${HOME}"/.{path,exports,aliases,functions,extra}; do
+    if [[ -r "${file_to_load}" ]]; then
+      shellx::log_debug "Loading home-extra file: ${file_to_load}"
+      # shellcheck source=/dev/null
+      source "${file_to_load}"
     fi
   done
-  unset file
+  unset file_to_load
 fi
 # .............................................................................
 #                                                               [ PATH-BACKUP ]
 # .............................................................................
 shellx::log_debug "Backing up PATH variable to SHELLX_PATH_BACKUP"
-export SHELLX_PATH_BACKUP="${PATH}"
+path::backup "SHELLX_PATH_BACKUP"
 # .............................................................................
 #                                                                       [ BIN ]
 # .............................................................................
@@ -104,15 +108,17 @@ if [[ -d "${__shellx_pluginsdir}" ]]; then
   # shellcheck disable=SC2207
   files_in_current_location=($(find "${__shellx_pluginsdir}/" -type f -name '*.*sh'))
   unset IFS
-  for file in "${files_in_current_location[@]}"; do
-    if [[ -r "$file" ]]; then
-      shellx::log_debug "Bundled Plugins: Loading bundledplugin file ${file}"
-      source "${file}"
-      export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@bundled/$(basename "${file}")" )
+  for file_to_load in "${files_in_current_location[@]}"; do
+    if [[ -r "$file_to_load" ]]; then
+      shellx::log_debug "Bundled Plugins: Loading bundledplugin file ${file_to_load}"
+      # shellcheck source=/dev/null
+      source "${file_to_load}"
+      # shellcheck disable=SC2206
+      export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@bundled/$(basename "${file_to_load}")" )
     fi
+    unset file_to_load
   done
   unset files_in_current_location
-
 else
   shellx::log_debug "Bundled Plugins: Cannot find bundled plugins directory or permissions are not correct."
 fi
@@ -120,68 +126,13 @@ fi
 #                                                                   [ PLUGINS ]
 # .............................................................................
 shellx::log_debug "Plugins feature enabled"
-# SHELLX_PLUGINS_EXTRA location
-IFS=""
-for location in "${SHELLX_PLUGINS_EXTRA[@]}"; do
-  if [[ -d "${location}" ]]; then
-    shellx::log_debug "Extra Plugins: adding (${location}) to location list"
-    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${location}" )
-  fi
-done
-unset IFS location
-# ~/.shellx.plugins.d location
-if [ -d "${__shellx_plugins_d}" ]; then
-  shellx::log_debug "shellx.plugins.d: folder found at ${__shellx_plugins_d}"
-  for location in $(find "${__shellx_plugins_d}" -mindepth 1 -maxdepth 1 -type d -or -type l); do
-    shellx::log_debug "shellx.plugins.d: adding ${location} to location list"
-    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${location}" )
-  done
-fi
-unset location
-# PLUGINS LOAD
-shellx::log_debug "__shellx_plugins_locations => ${__shellx_plugins_locations[@]}"
-shellx::log_debug "selective plugin filter => ${SHELLX_PLUGINS[@]:-@all}"
-for location in "${__shellx_plugins_locations[@]}"; do
-  shellx::log_debug "Plugins Load: reading scripts in location ${location}"
-  IFS=$'\n'
-  # shellcheck disable=SC2207
-  files_in_current_location=($(find "${location}/" -type f -name '*.*sh'))
-  unset IFS
-  for file in "${files_in_current_location[@]}"; do
-    shellx::log_debug "Applying selective filter to determine if plugin ${file} should be loaded"
-    # Selective loading feature
-    # 1. if SHELLX_PLUGINS contains @all or is not defined, load the plugin
-    should_load=0
-    if [[ -z "${SHELLX_PLUGINS}" ]] || [[ "${SHELLX_PLUGINS[*]}" =~ "@all" ]]; then
-      should_load=1
-    else
-      for token in "${SHELLX_PLUGINS[@]}"; do
-        if [[ "${token}" == "@$(basename "${location}")" ]] || \
-           [[ "${token}.sh" == "@$(basename "${location}")/$(basename "${file}")" ]] || \
-           [[ "${token}.sh" == "$(basename "${file}")" ]]; then
-           should_load=1
-           break
-        fi
-      done
-    fi
-
-    # Loadcheck, if should_load is 1
-    if [[ "${should_load}" -eq 1 ]]; then
-      if [[ -r "$file" ]]; then
-        shellx::log_debug "selective loading => loading ${file}"
-        source "${file}"
-        export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@$(basename "${location}")/$(basename "${file}")" )
-      else
-        shellx::log_warn "Plugin should be loaded but doesn't exists or is not readable, skipping."
-      fi
-    else
-      shellx::log_debug "selective loading => not loading"
-    fi
-  done
-  unset files_in_current_location
-done
-unset file location
+shellx::plugins::reload
 shellx::log_debug "Plugins: finish loading libraries"
+
+# .............................................................................
+#                                                                 [ POST-HOOK ]
+# .............................................................................
+# Calculates here time expend
 __shellx_feature_loadtime_end="$(date +%s)"
 # .............................................................................
 #                                                                    [ BANNER ]

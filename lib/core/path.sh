@@ -21,6 +21,11 @@ path::export() {
   fi
 }
 
+path::backup() {
+  local var_name="${1:-PATH_BAK}"
+  env::export "${var_name}" "${PATH}"
+}
+
 # MIT License: https://github.com/dylanaraps/neofetch
 path::get_absolute() {
   # This function finds the absolute path from a relative one.
