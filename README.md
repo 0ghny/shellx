@@ -124,16 +124,16 @@ Remember that by default all plugin commands operates with `SHELLX_PLUGINS_D` va
 | shellx/plugins   | shellx::plugins::is_installed | with plugin name as parameter returns true or false if plugins is installed         |
 | shellx/plugins   | shellx::plugins::loaded    | prints current loaded plugins into shellx                                              |
 | shellx/plugins   | shellx::plugins::reload    | reload all plugins                                                                     |
+| shellx/plugins   | shellx::plugins::update    | update specified plugin by name, or all plugins installed                              |
 
 ### Get current installed plugins
 
 ```shell
-$ shellx::plugins::installed                                                                                                                                               ✔ 
+$ shellx::plugins::installed
 Plugisn Installed:
   [*] plugins (~/.shellx/plugins)
   [*] shellx-community-plugins (~/.shellx.plugins.d/shellx-community-plugins)
   [*] shellx-plugins-arch (~/.shellx.plugins.d/shellx-plugins-arch)
-
 ```
 
 ### Installing a plugin
@@ -141,7 +141,7 @@ Plugisn Installed:
 Next example installs `shellx-plugins-arch` which contains plugins for arch linux
 
 ```shell
-$ shellx::plugins::install https://github.com/0ghny/shellx-plugins-arch                                                                                                    ✔ 
+$ shellx::plugins::install https://github.com/0ghny/shellx-plugins-arch
 [PLUGIN] Cloning plugin into shellx plugins directory... OK
 [PLUGIN] Reloading plugins...
 ```
@@ -151,8 +151,30 @@ $ shellx::plugins::install https://github.com/0ghny/shellx-plugins-arch         
 Next example uninstall `shellx-plugins-arch` plugin
 
 ```shell
-$ shellx::plugins::uninstall shellx-plugins-arch                                                                                                                           ✔ 
+$ shellx::plugins::uninstall shellx-plugins-arch
 [PLUGIN] shellx-plugins-arch uninstalling... OK
+```
+
+### Updating Plugins (or a single Plugin)
+
+```shell
+$ shellx::plugins::update [PLUGIN_NAME]
+  where PLUGIN_NAME is an optional parameter with one of the plugin names.
+
+  If provided, it should be an existing installed plugin name, to retrieve list of plugins installed you can execute
+    shellx::plugins::installed
+  and pick a proper name.
+
+  If not provided it will try to update ALL plugins.
+
+  The update method is using git pull under plugin directory, it will check also if directory contains a .git directory.
+```
+
+To update our `shellx-plugins-arch` plugin
+
+```shell
+$ shellx::plugins::update shellx-plugins-arch
+[+] Updating shellx-plugins-arch... OK
 ```
 
 ## Selective plugins loading

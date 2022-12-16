@@ -37,6 +37,9 @@ shellx::plugins::path() {
   echo "${__shellx_plugins_d}/${1}"
 }
 
+shellx::plugins::name() {
+  basename "${1}"
+}
 # .............................................................................
 # PLUGIN HANDLING
 # .............................................................................
@@ -133,6 +136,10 @@ shellx::plugins::installed() {
   done
 }
 
+shellx::plugins::internal::list_intalled(){
+  echo "${__shellx_plugins_locations[*]}"
+}
+
 # shellcheck disable=SC2154
 shellx::plugins::install() {
   local plugin_url="${1}"
@@ -163,4 +170,41 @@ shellx::plugins::uninstall() {
       shellx::plugins::internal::dir_reload
     } || echo -e " ${_color_red}KO${_color_reset}"
   fi
+}
+
+# Update a plugin location
+# Parameter 1 is optional
+#  if no parameter, will update all plugins
+# shellcheck disable=SC2206
+shellx::plugins::update() {
+  local plugin_name="${1}"
+  local list_to_update
+  local plugin_location
+
+  # Calculate list of plugins to update
+  if [[ -n "${plugin_name}" ]]; then
+    shellx::log_debug "specified plugin to update ${plugin_name}"
+    list_to_update=( "$(shellx::plugins::path "${plugin_name}")" )
+    shellx::log_debug "list of plugins locations to update ${list_to_update[*]}"
+  else
+    list_to_update=( ${__shellx_plugins_locations[*]} )
+  fi
+
+  for plugin_location in "${list_to_update[@]}"; do
+    if io::exists "${plugin_location}" && io::exists "${plugin_location}/.git"; then
+      echo -n "[+] Updating $(shellx::plugins::name "${plugin_location}")..."
+      echo git -C "${plugin_location}" pull 2>/dev/null 1>&2 \
+    && {
+      echo -e " ${_color_green}OK${_color_reset}"
+
+      shellx::log_debug "Reloading plugins..."
+      shellx::plugins::reload
+    } || echo -e " ${_color_red}KO${_color_reset}"
+    else
+      echo -n "[-] Plugin $(shellx::plugins::name "${plugin_location}") ${_color_red}NOT INSTALLED${_color_reset}"
+      shellx::log_warn \
+        "Plugin $(shellx::plugins::name "${plugin_location}") not installed, skipping"
+    fi
+    unset plugin_location
+  done
 }
