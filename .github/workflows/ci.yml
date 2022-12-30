@@ -1,0 +1,40 @@
+# Sample workflow for building and deploying a Jekyll site to GitHub Pages
+name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Run ShellCheck
+        uses: azohra/shell-linter@latest
+        with:
+          exclude-paths: "plugin-examples,hack"
+      - name: Test ShellX bootstrap
+        shell: bash
+        run: source shellx.sh
+      - name: Test ShellX cli
+        shell: bash
+        run: |
+          source shellx.sh
+          shellx version
+          shellx info
+      - name: Test ShellX Plugins Management
+        run: |
+          source shellx.sh
+
+          echo "Installing community plugins"
+          shellx plugins install https://github.com/0ghny/shellx-community-plugins
+          shellx plugins installed
+          shellx plugins is_installed shellx-community-plugins
+
+          echo "Uninstalling community plugins"
+          shellx plugins uninstall shellx-community-plugins
+          shellx plugins is_installed shellx-community-plugins && exit 1
