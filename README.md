@@ -37,12 +37,23 @@ Once cloned, modify your .zshrc or .bashrc or any *rc from a compatible shell to
 Once you starts a new shell (or `exec zsh` to start a new one) you can check ShellX is in action with the shellx init output
 
 ```shell
- Plugins loaded: wellcome.sh shellx_update.sh
- Loaded in: 00 hr 00 min 00 sec
-Happy Hacking
+ShellX initalised for oghny in Hostname
+Session information:
+  Started at 20 hr 10 min 34 sec
+  Loaded in: 00 hr 00 min 01 sec
+Libraries:
+    [*] colors.sh           [*] io.sh               [*] stopwatch.sh        [*] user.sh             [*] debug.sh            [*] plugins.sh
+    [*] command.sh          [*] path.sh             [*] sysinfo.sh          [*] cli.sh              [*] feature.sh          [*] session.sh
+    [*] env.sh              [*] shell.sh            [*] time.sh             [*] config.sh           [*] log.sh              [*] update.sh
+Plugins:
+  Applied filter: @all
+  Packages:
+    [*] [@plugins] ~/.shellx/plugins
+  Loaded:
+    [*] @plugins/shellx_update.sh                                   [*] @plugins/wellcome.sh
 ```
 
-Wellcome is the bundled plugin as of demo purposes.
+Wellcome is the bundled plugin as of demo purposes and shellx_update is the one that enables AUTO_UPDATE feature.
 
 ## Default features
 
@@ -51,6 +62,59 @@ Wellcome is the bundled plugin as of demo purposes.
 * Bundled Plugins: loaded from ~/.shellx/plugins folder
 * Auto include in PATH folder ~/.bin and ~/.local/bin to have your binaries also in control
 * Extended Plugins: variable SHELLX_PLUGINS_EXTRA is an array of locations where (same as plugins folder) will be loaded. It helps you to allow to have your private plugins in another locations.
+
+## Shellx CLI
+
+Shellx once initialized, has his own CLI to make easier to interact with shellx functionalities, below you will find the same output as `shellx help`
+
+```raw
+MANAGE SESSION
+-----------------------------------------------------------------------------
+shellx reset                            Resets current shell session
+                                        it does a /bin/zsh reset or exec /bin/zsh
+shellx info                             Print Shell,OS and Host information
+                                        current session info
+                                        (start time, load time, plugins, etc)
+
+MANAGE VERSION
+-----------------------------------------------------------------------------
+shellx version                          Prints current shellx version
+shellx update                           Updates (if newer) shellx version
+                                        is available to latest release
+shellx check                            Checks if a new version is available
+                                        useful for scripting (returns 1 in
+                                        case of no new version) so you can
+                                        > shellx check && shellx update
+
+TOOLS
+-----------------------------------------------------------------------------
+shellx debug enabled                    Enabled shellx debug output to stdout
+shellx debug disabled                   Disable shellx debug output to stdout
+
+
+MANAGE PLUGINS
+-----------------------------------------------------------------------------
+shellx plugins install <git-url>        Installs a plugins package from
+                                        git repo url
+shellx plugins installed                List installed plugin packages
+shellx plugins uninstall <plugin_name>  Uninstall specified plugins package
+shellx plugins reload                   Reloads plugins into current session
+shellx plugins loaded                   List of loaded plugins in current
+                                        current session
+```
+
+**Note**: All CLI commands `under the hood` calls to a shellx shell function in the form of `shellx::<namespace>::<function> <parameters>`. Below in this documentation you will find some internal library functions that can be used, and can be translated of invoked using this cli even if it's not documented in this help.
+You just need to follow this convention, as example:
+
+```shell
+# Gets the full path for shellx-community-plugins package
+$ shellx::plugins::path shellx-community-plugins
+~/.shellx.plugins.d/shellx-community-plugins
+
+# The same using shellx cli
+shellx plugins path shellx-community-plugins
+~/.shellx.plugins.d/shellx-community-plugins
+```
 
 ## Configuration Options
 
@@ -72,6 +136,18 @@ Current configuration options are:
 | SHELLX_DEBUG     | If declared with any value, debug mode is enabled, lot's of output in your console       |
 | SHELLX_PLUGINS   | By default value is `@all` which means all plugins, it controls the plugin loading feature, you can read more about it in this documentation in `Selective plugin loading` section |
 | SHELLX_HOME      | If you wanna move shellx to another location, you can set that location in this variable, by default it will use the place where the `shellx.sh` script is. |
+
+### Reload configuration from the CLI
+
+Now you can reload configuration from file in your current environment session just running
+
+```shell
+$ shellx config reload
+$ shellx config print
+SHELLX_NO_BANNER=yes
+SHELLX_PATH_BACKUP=....
+SHELLX_DEBUG=           # <- it means disabled
+```
 
 ## Bundled session variables
 
@@ -111,25 +187,36 @@ Shellx includes and load a library of functions that can be used inside any plug
 | time      | time::to_human_readable | from elapsed to human readable                                                           |
 | user      | user::current           | returns the name of the current user                                                     |
 
+## Community plugins
+
+[Community Plugins repo](https://github.com/0ghny/shellx-community-plugins)
+
+to installs them, or any other repository with plugins:
+
+```shell
+git clone https://github.com/0ghny/shellx-community-plugins ~/.shellx.plugins.d/shellx-community-plugins
+# then, just restart your shell (e.g: exec zsh)
+```
+
 ## Plugins Management
 
 Shellx offer different functions that allows you to install/uninstall plugins created using `ShellX Plugin Framework guidelines` (read in sections below).
 Remember that by default all plugin commands operates with `SHELLX_PLUGINS_D` variable, which is the directory that contains plugins installed.
 
-| LIB              | FUNC NAME                  | DESCRIPTION                                                                            |
-| ---------------- | -------------------------- | -------------------------------------------------------------------------------------- |
-| shellx/plugins   | shellx::plugins::install   | with a git repository as parameter installs the plugin and reload plugins              |
-| shellx/plugins   | shellx::plugins::uninstall | with a plugin name as parameter uninstall the plugin from your shellx installation     |
-| shellx/plugins   | shellx::plugins::installed | prints current installed plugins and their location                                    |
-| shellx/plugins   | shellx::plugins::is_installed | with plugin name as parameter returns true or false if plugins is installed         |
-| shellx/plugins   | shellx::plugins::loaded    | prints current loaded plugins into shellx                                              |
-| shellx/plugins   | shellx::plugins::reload    | reload all plugins                                                                     |
-| shellx/plugins   | shellx::plugins::update    | update specified plugin by name, or all plugins installed                              |
+| CLI                      | LIB              | FUNC NAME                  | DESCRIPTION                                                                            |
+| ------------------------ | ---------------- | -------------------------- | -------------------------------------------------------------------------------------- |
+| shellx plugins install   | shellx/plugins   | shellx::plugins::install   | with a git repository as parameter installs the plugin and reload plugins              |
+| shellx plugins uninstall | shellx/plugins   | shellx::plugins::uninstall | with a plugin name as parameter uninstall the plugin from your shellx installation     |
+| shellx plugins installed | shellx/plugins   | shellx::plugins::installed | prints current installed plugins and their location                                    |
+|                          | shellx/plugins   | shellx::plugins::is_installed | with plugin name as parameter returns true or false if plugins is installed         |
+| shellx plugins loaded    | shellx/plugins   | shellx::plugins::loaded    | prints current loaded plugins into shellx                                              |
+| shellx plugins reload    | shellx/plugins   | shellx::plugins::reload    | reload all plugins                                                                     |
+| shellx plugins update    | shellx/plugins   | shellx::plugins::update    | update specified plugin by name, or all plugins installed                              |
 
 ### Get current installed plugins
 
 ```shell
-$ shellx::plugins::installed
+$ shellx plugins installed
 Plugisn Installed:
   [*] plugins (~/.shellx/plugins)
   [*] shellx-community-plugins (~/.shellx.plugins.d/shellx-community-plugins)
@@ -141,7 +228,7 @@ Plugisn Installed:
 Next example installs `shellx-plugins-arch` which contains plugins for arch linux
 
 ```shell
-$ shellx::plugins::install https://github.com/0ghny/shellx-plugins-arch
+$ shellx plugins install https://github.com/0ghny/shellx-plugins-arch
 [PLUGIN] Cloning plugin into shellx plugins directory... OK
 [PLUGIN] Reloading plugins...
 ```
@@ -151,18 +238,18 @@ $ shellx::plugins::install https://github.com/0ghny/shellx-plugins-arch
 Next example uninstall `shellx-plugins-arch` plugin
 
 ```shell
-$ shellx::plugins::uninstall shellx-plugins-arch
+$ shellx plugins uninstall shellx-plugins-arch
 [PLUGIN] shellx-plugins-arch uninstalling... OK
 ```
 
 ### Updating Plugins (or a single Plugin)
 
 ```shell
-$ shellx::plugins::update [PLUGIN_NAME]
+$ shellx plugins update [PLUGIN_NAME]
   where PLUGIN_NAME is an optional parameter with one of the plugin names.
 
   If provided, it should be an existing installed plugin name, to retrieve list of plugins installed you can execute
-    shellx::plugins::installed
+    shellx plugins installed
   and pick a proper name.
 
   If not provided it will try to update ALL plugins.
@@ -173,11 +260,11 @@ $ shellx::plugins::update [PLUGIN_NAME]
 To update our `shellx-plugins-arch` plugin
 
 ```shell
-$ shellx::plugins::update shellx-plugins-arch
+$ shellx plugins update shellx-plugins-arch
 [+] Updating shellx-plugins-arch... OK
 ```
 
-## Selective plugins loading
+### Selective plugins loading
 
 The core of shellx is to be able to add or remove functionality by plugins. Some or the allready existing community plugins are ready to skip their functionality if as example the tool is not present into the system. If `dotnet` is not installed, doesn't makes sense to export the OPTOUT variables to disable telemetry.
 
@@ -208,18 +295,7 @@ SHELLX_PLUGINS=( @shellx-community-plugins/asdf @shellx-my-plugins )
 SHELLX_PLUGINS=( asdf pyenv minikube )
 ```
 
-## Community plugins
-
-[Community Plugins repo](https://github.com/0ghny/shellx-community-plugins)
-
-to installs them, or any other repository with plugins:
-
-```shell
-git clone https://github.com/0ghny/shellx-community-plugins ~/.shellx.plugins.d/shellx-community-plugins
-# then, just restart your shell (e.g: exec zsh)
-```
-
-## Plugin framework
+## Plugin framework Guidelines
 
 Plugins may use all internal variables and functions bundled in ShellX (in fact, they are declared in session so, you can access to them from your shell anytime).
 
@@ -240,3 +316,28 @@ Some ideas for plugins:
 * Download a binary if not present in your system
 * Create some aliases for some tools if they are installed
 * Initialize some stuff like nvm, or any other if present tool
+
+## Debugging ShellX
+
+Shellx offers some internal logging mechanishm that may help to understand what's happening behind a command or operation.
+Debug can be enabled in two ways:
+
+- adding variable SHELLX_DEBUG to `shellxrc` file with any value (remove to disable)
+- through CLI as `shellx debug enable` or `shellx debug disable`, this is specially useful since allows you to enable/disable for specific command executions during a session
+- defining SHELLX_DEBUG variable before running a command `SHELLX_DEBUG=yes shellx plugins reload`
+- defining SHELLX_DEBUG variable before running a function `SHELLX_DEBUG=yes shellx::plugins::reload`
+
+if you have it declared in `shellxrc` file you will see lot of outputs everytime you start a shell, that's why it's not recommented.
+
+**If you want to debug the shellx initialization process** it's better to do:
+
+```shell
+$ shellx debug enable
+$ shellx reset
+....
+... lot of output
+....
+
+... once you finish debugging
+$ shellx debug disable
+```

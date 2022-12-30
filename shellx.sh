@@ -16,6 +16,9 @@ fi
 #   1. ENV VAR: SHELLX_CONFIG
 #   2. $HOME/.shellxrc
 #   3. $HOME/.config/shellx/config
+#
+# NOTE: if you modify this section, remember to update shellx::config::reload
+# function too. It cannot be there since libs hasn't been loaded yet
 # .............................................................................
 if [[ -n "${SHELLX_CONFIG}" ]] && [[ -r "${SHELLX_CONFIG}" ]]; then
   export __shellx_config="${SHELLX_CONFIG}"
@@ -72,63 +75,44 @@ shellx::log_debug "Variable __shellx_config:      ${__shellx_config}"
 # .............................................................................
 #                                                                [ HOME-EXTRA ]
 # .............................................................................
+shellx::log_info "Feature: home-extra"
 if [[ -z "${SHELLX_SKIP_EXTRA}" ]]; then
-  shellx::log_debug "Feature: home-extra enabled"
+  shellx::log_debug "feat(home-extra): enabled"
   for file_to_load in "${HOME}"/.{path,exports,aliases,functions,extra}; do
     if [[ -r "${file_to_load}" ]]; then
-      shellx::log_debug "Loading home-extra file: ${file_to_load}"
+      shellx::log_debug "feat(home-extra): loading file ${file_to_load}"
       # shellcheck source=/dev/null
       source "${file_to_load}"
     fi
   done
   unset file_to_load
+else
+  shellx::log_debug "feat(home-extra): disabled"
 fi
+shellx::log_info "Feature: home-extra finalized"
 # .............................................................................
 #                                                               [ PATH-BACKUP ]
 # .............................................................................
-shellx::log_debug "Backing up PATH variable to SHELLX_PATH_BACKUP"
+shellx::log_debug "feat(path-backup): Backing up PATH variable to SHELLX_PATH_BACKUP"
 path::backup "SHELLX_PATH_BACKUP"
 # .............................................................................
 #                                                                       [ BIN ]
 # .............................................................................
-shellx::log_debug "Feature: Multi-Bin folder support"
+shellx::log_info "Feature: Multi-Bin folder support"
 _PATHS=( "$HOME/bin" "$HOME/.local/bin" "${__shellx_bindir}")
 for _path in "${_PATHS[@]}"; do
-  shellx::log_debug "multi-bin: adding bin folder (${_path}) to PATH"
+  shellx::log_debug "feat(multi-bin): adding bin folder (${_path}) to PATH"
   path::add "${_path}"
 done
-# .............................................................................
-#                                                           [ BUNDLED-PLUGINS ]
-# .............................................................................
-# BUNDLED PLUGINS: __shellx_pluginsdir location
-if [[ -d "${__shellx_pluginsdir}" ]]; then
-  shellx::log_debug "Bundled Plugins: Loading from ${__shellx_pluginsdir}"
-
-  IFS=$'\n'
-  # shellcheck disable=SC2207
-  files_in_current_location=($(find "${__shellx_pluginsdir}/" -type f -name '*.*sh'))
-  unset IFS
-  for file_to_load in "${files_in_current_location[@]}"; do
-    if [[ -r "$file_to_load" ]]; then
-      shellx::log_debug "Bundled Plugins: Loading bundledplugin file ${file_to_load}"
-      # shellcheck source=/dev/null
-      source "${file_to_load}"
-      # shellcheck disable=SC2206
-      export __shellx_plugins_loaded=( ${__shellx_plugins_loaded[*]} "@bundled/$(basename "${file_to_load}")" )
-    fi
-    unset file_to_load
-  done
-  unset files_in_current_location
-else
-  shellx::log_debug "Bundled Plugins: Cannot find bundled plugins directory or permissions are not correct."
-fi
+shellx::log_debug "feat(multi-bin): shellx-bin folder make scripts runnable"
+find "${__shellx_bindir}" -type f -exec chmod 744 {} \;
+shellx::log_info "Feature: Multi-Bin Finalized"
 # .............................................................................
 #                                                                   [ PLUGINS ]
 # .............................................................................
-shellx::log_debug "Plugins feature enabled"
+shellx::log_info "Feature: Plugins enabled"
 shellx::plugins::reload
-shellx::log_debug "Plugins: finish loading libraries"
-
+shellx::log_info "Feature: Plugins finalized"
 # .............................................................................
 #                                                                 [ POST-HOOK ]
 # .............................................................................
@@ -139,18 +123,5 @@ __shellx_feature_loadtime_end="$(date +%s)"
 # Shows a summary banner, can be skip with SHELLX_NO_BANNER variable
 # .............................................................................
 if [[ -z "${SHELLX_NO_BANNER}" ]]; then
-echo "ShellX initalised for $USER in ${HOST:-${HOSTNAME:-Unknown}}"
-echo "  Libraries Loaded: ${__shellx_loaded_libraries[*]}"
-echo "  Plugin Locations:"
-echo "    - [@bundled] ${__shellx_pluginsdir}"
-for loc in "${__shellx_plugins_locations[@]}"; do
-echo "    - [@$(basename "${loc}")] ${loc}"
-done
-
-echo "  Plugins Loaded:"
-for plug in "${__shellx_plugins_loaded[@]}"; do
-echo "    - ${plug}"
-done
-echo "Loaded in: $(time::to_human_readable "$(stopwatch::elapsed "$__shellx_feature_loadtime_start" "$__shellx_feature_loadtime_end")")"
-unset loc plug
+  shellx::session::info
 fi

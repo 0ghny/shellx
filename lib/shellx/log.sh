@@ -17,7 +17,7 @@ shellx::__log_level() {
 
 # Generic log function
 shellx::log() {
-  shellx::debug_enabled && \
+  shellx::debug::is_enabled && \
   echo "$(date "+%Y/%m/%d %H:%M:%S") [$(shellx::__log_level "${1:-DEBUG}")] ${@:2:$#}"
 }
 

@@ -9,11 +9,8 @@
 #  SHELLX_AUTO_UPDATE variable if defined will execute
 # auto-update feature, otherwise, has to be checked manually, either
 # using git pull on SHELLX_HOME or using shellx-update function alias
-# .............................................................................
-#                                                                   [ ALIASES ]
-# .............................................................................
-alias shellx-update='shellx::perform_update'
+
 # .............................................................................
 #                                                        [FEATURE: AUTO-UPDATE]
 # .............................................................................
-[[ -n "$SHELLX_AUTO_UPDATE" ]] && shellx::perform_update
+[[ -n "$SHELLX_AUTO_UPDATE" ]] && shellx update

@@ -7,21 +7,21 @@ shellx::plugins::log_info() {
   local plugin="${1:-unknown}"
   # shellcheck disable=SC2124
   local msg="${@:2:$#}"
-  shellx::log "INFO" "[PLUGIN ${plugin}] ${msg:-Non specified message, maybe a bug?}"
+  shellx::log_info "[PLUGIN ${plugin}] ${msg:-Non specified message, maybe a bug?}"
 }
 
 shellx::plugins::log_debug() {
   local plugin="${1:-unknown}"
   # shellcheck disable=SC2124
   local msg="${@:2:$#}"
-  shellx::log "DEBUG" "[PLUGIN ${plugin}] ${msg:-Non specified message, maybe a bug?}"
+  shellx::log_debug "[PLUGIN ${plugin}] ${msg:-Non specified message, maybe a bug?}"
 }
 
 shellx::plugins::log_error() {
   local plugin="${1:-unknown}"
   # shellcheck disable=SC2124
   local msg="${@:2:$#}"
-  shellx::log "ERROR" "[PLUGIN ${plugin}] ${msg:-Non specified message, maybe a bug?}"
+  shellx::log_error "[PLUGIN ${plugin}] ${msg:-Non specified message, maybe a bug?}"
 }
 # .............................................................................
 # RUNTIME
@@ -45,7 +45,19 @@ shellx::plugins::name() {
 # .............................................................................
 shellx::plugins::internal::dir_reload(){
   # Clean shellx plugins locations global variable first since we wanna reload
-  __shellx_plugins_locations=( "${__shellx_pluginsdir}" )
+  shellx::log_debug "Cleaning _shellx_plugins_locations variable to reload"
+  __shellx_plugins_locations=( )
+  shellx::log_debug "__shellx_plugins_locations -> ${__shellx_plugins_locations[*]}"
+
+  # BUNDLED PLUGINS: __shellx_pluginsdir location
+  # shellcheck disable=SC2154
+  if [[ -d "${__shellx_pluginsdir}" ]]; then
+    shellx::log_debug "Bundled Plugins: adding bundled from ${__shellx_pluginsdir} to location list"
+    # shellcheck disable=SC2206
+    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${__shellx_pluginsdir}" )
+  else
+    shellx::log_debug "Bundled Plugins: Cannot find bundled plugins directory or permissions are not correct."
+  fi
 
   # SHELLX_PLUGINS_EXTRA location
   IFS=""
@@ -57,6 +69,7 @@ shellx::plugins::internal::dir_reload(){
     fi
   done
   unset IFS location
+
   # ~/.shellx.plugins.d location
   if [ -d "${__shellx_plugins_d}" ]; then
     shellx::log_debug "shellx.plugins.d: folder found at ${__shellx_plugins_d}"
@@ -71,8 +84,15 @@ shellx::plugins::internal::dir_reload(){
 }
 
 shellx::plugins::reload() {
+  # Reload shellx configuration
+  shellx::config::reload
+
   # Reload plugins directories first
   shellx::plugins::internal::dir_reload
+
+  shellx::log_debug "Cleaning __shellx_plugins_loaded variable to reload"
+  __shellx_plugins_loaded=( )
+  shellx::log_debug "__shellx_plugins_loaded -> ${__shellx_plugins_loaded[*]}"
 
   # Reload all plugins configured into the system
   shellx::log_debug "__shellx_plugins_locations => ${__shellx_plugins_locations[*]}"
@@ -148,7 +168,7 @@ shellx::plugins::install() {
   git clone \
           "${plugin_url}" "${__shellx_plugins_d}/$(basename "${plugin_url}")" \
       2>/dev/null 1>&2 \
-    && {
+    && {::cli::run
       echo -e " ${_color_green}OK${_color_reset}"
 
       echo "[PLUGIN] Reloading plugins..."
