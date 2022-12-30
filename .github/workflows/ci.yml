@@ -31,11 +31,16 @@ jobs:
           SHELLX_DEBUG: yes
           SHELLX_HOME: ${{ github.workspace }}
         run: |
+          # https://github.com/actions/toolkit/issues/766
+          echo "Enabling aliases definition"
+          shopt -s expand_aliases
+
+          echo "Bootstrapping shellx"
           source shellx.sh
-          echo "Checking aliases"
-          alias | grep shellx
+
           echo "Checking shellx version command"
           shellx version
+
           echo "Checking shellx info command"
           shellx info
       - name: Test ShellX Plugins Management
@@ -43,6 +48,11 @@ jobs:
           SHELLX_DEBUG: yes
           SHELLX_HOME: ${{ github.workspace }}
         run: |
+          # https://github.com/actions/toolkit/issues/766
+          echo "Enabling aliases definition"
+          shopt -s expand_aliases
+
+          echo "Bootstrapping shellx"
           source shellx.sh
 
           echo "Installing community plugins"
