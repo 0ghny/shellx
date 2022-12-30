@@ -24,10 +24,12 @@ jobs:
       - name: Test ShellX bootstrap
         env:
           SHELLX_DEBUG: yes
+          SHELLX_HOME: ${{ github.workspace }}
         run: source shellx.sh
       - name: Test ShellX cli
         env:
           SHELLX_DEBUG: yes
+          SHELLX_HOME: ${{ github.workspace }}
         run: |
           source shellx.sh
           shellx version
@@ -35,6 +37,7 @@ jobs:
       - name: Test ShellX Plugins Management
         env:
           SHELLX_DEBUG: yes
+          SHELLX_HOME: ${{ github.workspace }}
         run: |
           source shellx.sh
 
