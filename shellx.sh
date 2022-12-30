@@ -107,8 +107,13 @@ for _path in "${_PATHS[@]}"; do
   shellx::log_debug "feat(multi-bin): adding bin folder (${_path}) to PATH"
   path::add "${_path}"
 done
-shellx::log_debug "feat(multi-bin): shellx-bin folder make scripts runnable"
-find "${__shellx_bindir}" -type f -exec chmod 744 {} \; 2>/dev/null
+
+if [[ -d "${__shellx_bindir}" ]]; then
+  shellx::log_debug "feat(multi-bin): shellx-bin folder make scripts runnable"
+  find "${__shellx_bindir}" -type f -exec chmod 744 {} \; 2>/dev/null
+else
+  shellx::log_debug "feat(multi-bin): shellx-bin folder not found, ignoring"
+fi
 shellx::log_info "Feature: Multi-Bin Finalized"
 # .............................................................................
 #                                                                   [ PLUGINS ]

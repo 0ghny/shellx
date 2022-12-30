@@ -14,7 +14,7 @@ jobs:
       - name: Run ShellCheck
         uses: azohra/shell-linter@latest
         with:
-          path: "shellx.sh,lib/core,lib/shellx,plugins"
+          path: "shellx.sh,lib/core/*.sh,lib/shellx/*.sh,plugins/*.sh"
           exclude-paths: "plugin-examples,hack"
   test:
     runs-on: ubuntu-latest
