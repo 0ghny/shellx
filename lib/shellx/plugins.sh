@@ -168,7 +168,7 @@ shellx::plugins::install() {
   git clone \
           "${plugin_url}" "${__shellx_plugins_d}/$(basename "${plugin_url}")" \
       2>/dev/null 1>&2 \
-    && {::cli::run
+    && {
       echo -e " ${_color_green}OK${_color_reset}"
 
       echo "[PLUGIN] Reloading plugins..."
