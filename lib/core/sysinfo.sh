@@ -69,6 +69,7 @@ sysinfo::os_name() {
 }
 
 sysinfo::connected_users() {
+  # shellcheck disable=SC2155
   local _users="$(who | awk '!seen[$1]++ {printf $1 ", "}')"
   _users="${_users%\,*}"
   echo "${_users}"
@@ -94,6 +95,7 @@ sysinfo::kernel() {
 # Adaptation from (MIT License): https://github.com/dylanaraps/neofetch
 sysinfo::uptime() {
   local _uptime
+  # shellcheck disable=SC2155
   local _os=$(sysinfo::os_name)
   # Get uptime in seconds.
   case $_os in
