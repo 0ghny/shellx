@@ -27,10 +27,13 @@ elif [[ -r "${HOME}"/.shellxrc ]]; then
 elif [[ -r "${HOME}"/.config/shellx/config ]]; then
   export __shellx_config="${HOME}"/.config/shellx/config
 else
-  echo "ShellX Configuration file not found, applying defaults."
+  if [[ -n "${SHELLX_DEBUG}" ]] && \
+    [[ "$(string::to_upper "${SHELLX_DEBUG}")" == "YES" ]]; then
+    echo "ShellX Configuration file not found, applying defaults."
+  fi
 fi
 
-if [[ -n "${__shellx_config}" ]]; then
+if [[ -n "${__shellx_config}" ]] && [[ -r "${__shellx_config}" ]]; then
   set -o allexport
   # shellcheck disable=SC1090
   source "${__shellx_config}"

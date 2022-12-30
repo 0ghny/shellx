@@ -1,7 +1,8 @@
 # shellcheck shell=bash
 
 shellx::debug::is_enabled() {
-  [[ -n "${SHELLX_DEBUG}" ]]
+  [[ -n "${SHELLX_DEBUG}" ]] && \
+  [[ "$(string::to_upper "${SHELLX_DEBUG}")" == "YES" ]]
 }
 
 shellx::debug::enable() {
