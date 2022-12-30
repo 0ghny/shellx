@@ -65,4 +65,4 @@ jobs:
           echo "Uninstalling community plugins"
           shellx plugins uninstall shellx-community-plugins
           ls -lah ${__shellx_plugins_d}
-          shellx plugins is_installed shellx-community-plugins && exit 1
+          shellx plugins is_installed shellx-community-plugins || true
