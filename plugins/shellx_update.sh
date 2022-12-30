@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 
 # @description
 # Include env functions to update shellx. It also include an auto-check
@@ -13,4 +13,7 @@
 # .............................................................................
 #                                                        [FEATURE: AUTO-UPDATE]
 # .............................................................................
-[[ -n "$SHELLX_AUTO_UPDATE" ]] && shellx update
+if [[ -n "${SHELLX_AUTO_UPDATE}" ]] && \
+  [[ "$(echo "${SHELLX_AUTO_UPDATE}" | tr '[:lower:]' '[:upper:]')" == "YES" ]]; then
+    shellx::update
+fi

@@ -27,10 +27,13 @@ elif [[ -r "${HOME}"/.shellxrc ]]; then
 elif [[ -r "${HOME}"/.config/shellx/config ]]; then
   export __shellx_config="${HOME}"/.config/shellx/config
 else
-  echo "ShellX Configuration file not found, applying defaults."
+  if [[ -n "${SHELLX_DEBUG}" ]] && \
+  [[ "$(echo "${SHELLX_DEBUG}" | tr '[:lower:]' '[:upper:]')" == "YES" ]]; then
+    echo "ShellX Configuration file not found, applying defaults."
+  fi
 fi
 
-if [[ -n "${__shellx_config}" ]]; then
+if [[ -n "${__shellx_config}" ]] && [[ -r "${__shellx_config}" ]]; then
   set -o allexport
   # shellcheck disable=SC1090
   source "${__shellx_config}"
@@ -104,8 +107,13 @@ for _path in "${_PATHS[@]}"; do
   shellx::log_debug "feat(multi-bin): adding bin folder (${_path}) to PATH"
   path::add "${_path}"
 done
-shellx::log_debug "feat(multi-bin): shellx-bin folder make scripts runnable"
-find "${__shellx_bindir}" -type f -exec chmod 744 {} \; 2>/dev/null
+
+if [[ -d "${__shellx_bindir}" ]]; then
+  shellx::log_debug "feat(multi-bin): shellx-bin folder make scripts runnable"
+  find "${__shellx_bindir}" -type f -exec chmod 744 {} \; 2>/dev/null
+else
+  shellx::log_debug "feat(multi-bin): shellx-bin folder not found, ignoring"
+fi
 shellx::log_info "Feature: Multi-Bin Finalized"
 # .............................................................................
 #                                                                   [ PLUGINS ]
