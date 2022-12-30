@@ -32,7 +32,11 @@ jobs:
           SHELLX_HOME: ${{ github.workspace }}
         run: |
           source shellx.sh
+          echo "Checking aliases"
+          alias | grep shellx
+          echo "Checking shellx version command"
           shellx version
+          echo "Checking shellx info command"
           shellx info
       - name: Test ShellX Plugins Management
         env:
