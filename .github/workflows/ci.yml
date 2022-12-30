@@ -20,11 +20,15 @@ jobs:
         run: source shellx.sh
       - name: Test ShellX cli
         shell: bash
+        env:
+          SHELLX_DEBUG: yes
         run: |
           source shellx.sh
           shellx version
           shellx info
       - name: Test ShellX Plugins Management
+        env:
+          SHELLX_DEBUG: yes
         run: |
           source shellx.sh
 
