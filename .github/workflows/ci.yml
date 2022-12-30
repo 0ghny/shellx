@@ -59,7 +59,10 @@ jobs:
           shellx plugins install https://github.com/0ghny/shellx-community-plugins
           shellx plugins installed
           shellx plugins is_installed shellx-community-plugins
+          echo "Printing shellx.plugins.dir content"
+          ls -lah ${__shellx_plugins_d}
 
           echo "Uninstalling community plugins"
           shellx plugins uninstall shellx-community-plugins
+          ls -lah ${__shellx_plugins_d}
           shellx plugins is_installed shellx-community-plugins && exit 1
