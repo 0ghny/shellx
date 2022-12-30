@@ -15,11 +15,14 @@ jobs:
         uses: azohra/shell-linter@latest
         with:
           exclude-paths: "plugin-examples,hack"
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
       - name: Test ShellX bootstrap
-        shell: bash
         run: source shellx.sh
       - name: Test ShellX cli
-        shell: bash
         env:
           SHELLX_DEBUG: yes
         run: |

@@ -28,7 +28,7 @@ elif [[ -r "${HOME}"/.config/shellx/config ]]; then
   export __shellx_config="${HOME}"/.config/shellx/config
 else
   if [[ -n "${SHELLX_DEBUG}" ]] && \
-    [[ "$(string::to_upper "${SHELLX_DEBUG}")" == "YES" ]]; then
+  [[ "$(echo "${SHELLX_DEBUG}" | tr '[:lower:]' '[:upper:]')" == "YES" ]]; then
     echo "ShellX Configuration file not found, applying defaults."
   fi
 fi
