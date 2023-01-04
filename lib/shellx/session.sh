@@ -1,6 +1,44 @@
-# shellcheck shell=bash
+# shellcheck shell=bash disable=SC2154
 
-# shellcheck disable=SC2154
+shellx::session::private::libraries() {
+  echo "Libraries:"
+  if ! [[ -x "$(command -v column)" ]]; then
+    for lib in "${__shellx_loaded_libraries[@]}"; do
+    echo "    [*] ${lib}"
+    done
+  else
+    for lib in "${__shellx_loaded_libraries[@]}"; do
+      echo "    [*] ${lib}"
+    done | column
+  fi
+  unset lib
+}
+
+shellx::session::private::plugins() {
+  echo "Plugins:"
+  echo "  Applied filter: ${SHELLX_PLUGINS[*]:-@all}"
+  if ! [[ -x "$(command -v column)" ]]; then
+    echo "  Packages:"
+    for loc in "${__shellx_plugins_locations[@]}"; do
+      echo "    [*] [@$(basename "${loc}")] ${loc}"
+    done
+    echo "  Loaded:"
+    for plug in "${__shellx_plugins_loaded[@]}"; do
+      echo "    [*] ${plug}"
+    done
+  else
+    echo "  Packages:"
+    for loc in "${__shellx_plugins_locations[@]}"; do
+      echo "    [*] [@$(basename "${loc}")] ${loc}"
+    done | column
+    echo "  Loaded:"
+    for plug in "${__shellx_plugins_loaded[@]}"; do
+      echo "    [*] ${plug}"
+    done | column
+  fi
+  unset loc plug
+}
+
 shellx::session::info() {
 
 cat<<EOF
@@ -20,22 +58,9 @@ EOF
   echo "  Started at $(time::to_human_readable "${__shellx_feature_loadtime_start}")"
   echo "  Loaded in: $(time::to_human_readable "$(stopwatch::elapsed "$__shellx_feature_loadtime_start" "$__shellx_feature_loadtime_end")")"
   echo ""
-  echo "Libraries:"
-  for lib in "${__shellx_loaded_libraries[@]}"; do
-  echo "    [*] ${lib}"
-  done | column
+  shellx::session::private::libraries
   echo ""
-  echo "Plugins:"
-  echo "  Applied filter: ${SHELLX_PLUGINS[*]:-@all}"
-  echo "  Packages:"
-  for loc in "${__shellx_plugins_locations[@]}"; do
-  echo "    [*] [@$(basename "${loc}")] ${loc}"
-  done | column
-  echo "  Loaded:"
-  for plug in "${__shellx_plugins_loaded[@]}"; do
-  echo "    [*] ${plug}"
-  done | column
-  unset loc plug
+  shellx::session::private::plugins
 }
 # Command shellx::info
 alias shellx::info='shellx::session::info'
