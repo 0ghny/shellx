@@ -79,9 +79,8 @@ shellx info                             Print Shell,OS and Host information
 MANAGE VERSION
 -----------------------------------------------------------------------------
 shellx version                          Prints current shellx version
-shellx version notes  <count>           Prints current version notes
-                                        count is the number of "release notes"
-                                        by default it's 3
+shellx version info                     Prints a nice message with
+                                        version and release notes
 shellx update                           Updates (if newer) shellx version
                                         is available to latest release
 shellx check                            Checks if a new version is available

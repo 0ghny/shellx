@@ -48,14 +48,9 @@ cat<<EOF
  \___ \| '_ \ / _ \ | |   > < 
  ____) | | | |  __/ | |  / . \ 
 |_____/|_| |_|\___|_|_| /_/ \_\ 
-
- version -> $(shellx::version)
-
-Release Notes:
-$(shellx::version::notes)
+              $(shellx::version)
 
 EOF
-
   echo "Session information:"
   echo "  User $USER in ${HOST:-${HOSTNAME:-Unknown}}"
   echo "  Started at $(time::to_human_readable "${__shellx_feature_loadtime_start}")"
