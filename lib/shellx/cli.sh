@@ -29,9 +29,13 @@ Below you'll find the list of available commands and options
   MANAGE VERSION
   -----------------------------------------------------------------------------
   shellx version                          Prints current shellx version
+  shellx version info                     Prints a nice message with
+                                          version and release notes
   shellx update                           Updates (if newer) shellx version
                                           is available to latest release
   shellx check                            Checks if a new version is available
+                                          and print new changes
+  shellx update available                 Checks if a new version is available
                                           useful for scripting (returns 1 in
                                           case of no new version) so you can
                                           > shellx check && shellx update
