@@ -28,6 +28,7 @@ Below you'll find the list of available commands and options
 
   MANAGE VERSION
   -----------------------------------------------------------------------------
+  shellx version                          Prints current shellx version
   shellx update                           Updates (if newer) shellx version
                                           is available to latest release
   shellx check                            Checks if a new version is available
@@ -80,8 +81,8 @@ shellx::cli::run() {
     eval "shellx::$1::$2 ${*:3}"
   else
     # commands like shellx info or update
-    shellx::log_debug "calling -> shellx::$1"
-    eval "shellx::$1"
+    shellx::log_debug "calling -> shellx::$1 ${*:2}"
+    eval "shellx::$1 ${*:2}"
   fi
 }
 
