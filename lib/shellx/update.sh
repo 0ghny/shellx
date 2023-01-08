@@ -32,9 +32,7 @@ shellx::update::info() {
     echo "if you wanna update, run 'shellx update'"
   else
     echo "you're running latest version, latest messages from this version are: "
-    # shellcheck disable=SC2086
-    git -C "${__shellx_homedir}" --no-pager \
-        log --pretty=format:"%h%x09%an%x09%ad%x09%s" -n3
+    shellx::version::notes
   fi
 }
 alias shellx::check='shellx::update::info'

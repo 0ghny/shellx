@@ -51,6 +51,9 @@ cat<<EOF
 
  version -> $(shellx::version)
 
+Release Notes:
+$(shellx::version::notes)
+
 EOF
 
   echo "Session information:"
