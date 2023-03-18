@@ -1,0 +1,6 @@
+# Sets the plugins to be loaded
+# it support, location/plugins by name
+SHELLX_DEBUG=no
+SHELLX_PLUGINS=( @plugins )
+# No Banner
+SHELLX_NO_BANNER=yes
