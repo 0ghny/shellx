@@ -1,0 +1,3 @@
+SHELLX_DEBUG=no
+SHELLX_PLUGINS=( @plugins )
+SHELLX_NO_BANNER=yes

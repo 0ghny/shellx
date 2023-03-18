@@ -60,8 +60,11 @@ EOF
   echo ""
   shellx::session::private::plugins
 }
+
 # Command shellx::info
-alias shellx::info='shellx::session::info'
+shellx::info() {
+  shellx::session::info
+}
 
 # Command shellx reset
 alias shellx::reset='exec $SHELL'

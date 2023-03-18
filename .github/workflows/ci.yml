@@ -19,14 +19,34 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup BATS
+        uses: mig4/setup-bats@v1
+        with:
+          bats-version: 1.9.0
+
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Unit Tests
+        run: |
+          mkdir -p reports
+          bats --timing --report-formatter junit tests/*.bats --output reports
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          name: Unit Tests            # Name of the check run which will be created
+          path: reports/*.xml         # Path to test results
+          reporter: java-junit             # Format of test results
+
       - name: Test ShellX bootstrap
         env:
           SHELLX_DEBUG: yes
           SHELLX_HOME: ${{ github.workspace }}
         run: source shellx.sh
-      - name: Test ShellX cli
+
+      - name: e2e ShellX cli
         env:
           SHELLX_DEBUG: yes
           SHELLX_HOME: ${{ github.workspace }}
@@ -43,26 +63,3 @@ jobs:
 
           echo "Checking shellx info command"
           shellx info
-      - name: Test ShellX Plugins Management
-        env:
-          SHELLX_DEBUG: yes
-          SHELLX_HOME: ${{ github.workspace }}
-        run: |
-          # https://github.com/actions/toolkit/issues/766
-          echo "Enabling aliases definition"
-          shopt -s expand_aliases
-
-          echo "Bootstrapping shellx"
-          source shellx.sh
-
-          echo "Installing community plugins"
-          shellx plugins install https://github.com/0ghny/shellx-community-plugins
-          shellx plugins installed
-          shellx plugins is_installed shellx-community-plugins
-          echo "Printing shellx.plugins.dir content"
-          ls -lah ${__shellx_plugins_d}
-
-          echo "Uninstalling community plugins"
-          shellx plugins uninstall shellx-community-plugins
-          ls -lah ${__shellx_plugins_d}
-          shellx plugins is_installed shellx-community-plugins || true

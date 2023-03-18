@@ -90,11 +90,15 @@ shellx::cli::run() {
   fi
 }
 
-# Simulate an application with an alias
+# Simulate an application with a function
 # this is required, because if shellx were a shell script
 # when invoked from the terminal it will create a new
 # process and shellx::functions sourced from current environment
 # wont be available to the script.
 # It will make that modifications or operations running commands
 # from this cli won't impact the current environment shell.
-alias shellx='shellx::cli::run'
+# NOTE: I'm not using aliases because aliases are not allowed in scripts
+# they're only allowed in interactive shell, so a function it's a better choice
+shellx() {
+  shellx::cli::run "${@}"
+}

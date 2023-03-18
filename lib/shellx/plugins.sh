@@ -164,16 +164,21 @@ shellx::plugins::internal::list_intalled(){
 shellx::plugins::install() {
   local plugin_url="${1}"
 
-  echo -n "[PLUGIN] Cloning plugin into shellx plugins directory..."
-  git clone \
-          "${plugin_url}" "${__shellx_plugins_d}/$(basename "${plugin_url}")" \
-      2>/dev/null 1>&2 \
-    && {
-      echo -e " ${_color_green}OK${_color_reset}"
+  # check if it's already installed
+  if [[ -d "${__shellx_plugins_d}/$(basename "${plugin_url}")" ]]; then
+    echo "[PLUGIN] It's already installed"
+  else
+    echo -n "[PLUGIN] Cloning plugin into shellx plugins directory..."
+    git clone \
+            "${plugin_url}" "${__shellx_plugins_d}/$(basename "${plugin_url}")" \
+        2>/dev/null 1>&2 \
+      && {
+        echo -e " ${_color_green}OK${_color_reset}"
 
-      echo "[PLUGIN] Reloading plugins..."
-      shellx::plugins::reload
-    } || echo -e " ${_color_red}KO${_color_reset}"
+        echo "[PLUGIN] Reloading plugins..."
+        shellx::plugins::reload
+      } || (echo -e " ${_color_red}KO${_color_reset}"; return 1)
+    fi
 }
 
 shellx::plugins::uninstall() {
