@@ -1,7 +1,12 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2154
 shellx::version() {
-  # shellcheck disable=SC2154
-  echo "$(git -C "${__shellx_homedir}" rev-parse --abbrev-ref HEAD)-$(git -C "${__shellx_homedir}" rev-parse --short HEAD)"
+  local version
+  version="v$(cat "${__shellx_homedir}/version.txt")"
+  if git::isrepo "${__shellx_homedir}"; then
+    version="${version}-$(git::sha::short "${__shellx_homedir}")"
+  fi
+  echo "${version}"
 }
 
 shellx::version::notes() {
