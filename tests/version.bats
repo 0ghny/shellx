@@ -16,9 +16,9 @@ teardown() {
 # .............................................................................
 # TESTS
 # .............................................................................
-@test "version should returns current version (branch-commit)" {
+@test "version should returns version plus short sha" {
   # Arrange
-  local current_branch="$(git rev-parse --abbrev-ref HEAD)"
+  local current_version="$(cat "${SHELLX_HOME}/version.txt")"
   local current_commit="$(git rev-parse --short HEAD)"
 
   # Act
@@ -26,7 +26,7 @@ teardown() {
 
   # Assert
   assert_success
-  assert_output --partial "${current_branch}-${current_commit}"
+  assert_output --partial "${current_version}-${current_commit}"
 }
 
 @test "version info should returns release notes" {
