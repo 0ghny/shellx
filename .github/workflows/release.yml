@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
 
       - id: get-version
-        run: echo "::set-output name=version::$(cat version.txt)"
+        run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
       - id: semver
         uses: matt-usurp/validate-semver@v1
