@@ -30,16 +30,17 @@ jobs:
 
       - name: Check if version has to be changed
         id: version-check
+        shell: bash
         run: |
-          git diff-index --name-only --diff-filter=d {{ github.base_ref }} | grep -q -i "^lib\/" && echo "lib folder has changes"
-          git diff-index --name-only --diff-filter=d {{ github.base_ref }} | grep -q "^plugins\/" && echo "plugins folder has changes"
-          git diff-index --name-only --diff-filter=d {{ github.base_ref }} | grep -q "^shellx.sh" && echo "shellx.sh has changes"
+          git diff-index --name-only --diff-filter=d ${{ github.base_ref }} | grep -q -i "^lib\/" && echo "lib folder has changes"
+          git diff-index --name-only --diff-filter=d ${{ github.base_ref }} | grep -q "^plugins\/" && echo "plugins folder has changes"
+          git diff-index --name-only --diff-filter=d ${{ github.base_ref }} | grep -q "^shellx.sh" && echo "shellx.sh has changes"
           
-          if git diff-index --name-only --diff-filter=d {{ github.base_ref }} | grep -q -i "^lib\/" || \
-            git diff-index --name-only --diff-filter=d {{ github.base_ref }} | grep -q "^plugins\/" || \
-            git diff-index --name-only --diff-filter=d {{ github.base_ref }} | grep -q "^shellx.sh"; then
+          if git diff-index --name-only --diff-filter=d ${{ github.base_ref }} | grep -q -i "^lib\/" || \
+            git diff-index --name-only --diff-filter=d ${{ github.base_ref }} | grep -q "^plugins\/" || \
+            git diff-index --name-only --diff-filter=d ${{ github.base_ref }} | grep -q "^shellx.sh"; then
             echo "version has to change"
-            if git diff-index --name-only --diff-filter=d origin/main | grep -q "version.txt"; then
+            if git diff-index --name-only --diff-filter=d ${{ github.base_ref }} | grep -q "version.txt"; then
               echo "version.txt file has been modified"
             else
               echo "version.txt file has not been modified, probably you should update it"
