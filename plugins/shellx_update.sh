@@ -11,14 +11,11 @@
 #  SHELLX_AUTO_UPDATE variable if defined will execute
 # auto-update feature, otherwise, has to be checked manually, either
 # using git pull on SHELLX_HOME or using shellx-update function alias
-# .............................................................................
-#                                                                        [VARS]
-# .............................................................................
-# shellcheck disable=SC2016
+
 SHELLX_PLUGIN_UPDATE_LOCK_FILE="${SHELLX_PLUGIN_UPDATE_LOCK_FILE:-/tmp/.shellx_update_check.lock}"
-# .............................................................................
-#                                                              [FEATURE: CHECK]
-# .............................................................................
+
+# @feature check
+# @description Check if there's a new version of shellx available.
 if [[ ! -f "${SHELLX_PLUGIN_UPDATE_LOCK_FILE}" ]]; then
   shellx::plugins::log_debug "UPDATER" "shellx version hasnt been checked yet, doing it now"
   if shellx::update::available; then
@@ -28,9 +25,9 @@ if [[ ! -f "${SHELLX_PLUGIN_UPDATE_LOCK_FILE}" ]]; then
   fi
   shellx::plugins::log_debug "UPDATER" "creating shellx update check lock file at ${SHELLX_PLUGIN_UPDATE_LOCK_FILE}"
   touch "${SHELLX_PLUGIN_UPDATE_LOCK_FILE}"
-# .............................................................................
-#                                                        [FEATURE: AUTO-UPDATE]
-# .............................................................................
+
+  # @feature auto-update
+  # @description Auto-update shellx if SHELLX_AUTO_UPDATE is set to YES
   if [[ -n "${SHELLX_AUTO_UPDATE}" ]] && \
     [[ "$(echo "${SHELLX_AUTO_UPDATE}" | tr '[:lower:]' '[:upper:]')" == "YES" ]]; then
     shellx::plugins::log_debug "UPDATER" "Auto update enabled, updating it now"

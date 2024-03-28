@@ -1,10 +1,14 @@
 name: CI
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
+    paths:
+      - ".github/workflows/ci.yml"
+      - "shellx.sh"
+      - "lib/**"
+      - "plugins/**"
+      - "tests/**"
 
 jobs:
   lint:
@@ -17,6 +21,43 @@ jobs:
         with:
           path: "shellx.sh,lib/core/*.sh,lib/shellx/*.sh,plugins/*.sh"
           exclude-paths: "plugin-examples,hack"
+
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if version has to be changed
+        id: version-check
+        shell: bash
+        run: |
+          git diff-index --name-only --diff-filter=d origin/main | grep -q -i "^lib\/" && echo "lib folder has changes"
+          git diff-index --name-only --diff-filter=d origin/main | grep -q "^plugins\/" && echo "plugins folder has changes"
+          git diff-index --name-only --diff-filter=d origin/main | grep -q "^shellx.sh" && echo "shellx.sh has changes"
+          
+          if git diff-index --name-only --diff-filter=d origin/main | grep -q -i "^lib\/" || \
+            git diff-index --name-only --diff-filter=d origin/main | grep -q "^plugins\/" || \
+            git diff-index --name-only --diff-filter=d origin/main | grep -q "^shellx.sh"; then
+            echo "version has to change"
+            if git diff-index --name-only --diff-filter=d origin/main | grep -q "version.txt"; then
+              echo "version.txt file has been modified"
+            else
+              echo "ERROR: version.txt file has not been modified, probably you should update it"
+              exit 1
+            fi
+          fi
+
+      - id: get-version
+        run: echo "::set-output name=version::$(cat version.txt)"
+
+      - id: semver
+        uses: matt-usurp/validate-semver@v1
+        with:
+          version: ${{ steps.get-version.outputs.version }}
+      
   test:
     runs-on: ubuntu-latest
     steps:
@@ -39,9 +80,9 @@ jobs:
         uses: dorny/test-reporter@v1
         if: success() || failure()    # run this step even if previous step failed
         with:
-          name: Unit Tests            # Name of the check run which will be created
+          name: Unit Tests Report     # Name of the check run which will be created
           path: reports/*.xml         # Path to test results
-          reporter: java-junit             # Format of test results
+          reporter: java-junit        # Format of test results
 
       - name: Test ShellX bootstrap
         env:
