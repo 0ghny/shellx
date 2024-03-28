@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "shellx.sh"
+      - "lib/**"
+      - "plugins/**"
+      - "version.txt"
+
+jobs:
+  release-version:
+    name: "Release Version"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: get-version
+        run: echo "::set-output name=version::$(cat version.txt)"
+
+      - id: semver
+        uses: matt-usurp/validate-semver@v1
+        with:
+          version: ${{ steps.get-version.outputs.version }}
+
+      - name: Publish tags
+        id: tags
+        run: |
+          FULL_VERSION="${{ steps.get-version.outputs.version }}"
+          # e.g: v1.0.0
+          PATCH="v${FULL_VERSION}"
+          # e.g: v1.0
+          MINOR="v${FULL_VERSION%.*}"
+          # e.g: v1
+          MAJOR="v${FULL_VERSION%.*.*}"
+         
+          git tag "$PATCH"
+          git tag -f "$MINOR"
+          git tag -f "$MAJOR"
+          git push origin -f --tags
+
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1.14.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          generateReleaseNotes: true
+          name: ${{ steps.get-version.outputs.version }}
+          tag: "v${{ steps.get-version.outputs.version }}"
