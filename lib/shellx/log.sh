@@ -69,7 +69,7 @@ shellx::log_internal::caller_info() {
 # caller_info is a call to shellx::log_internal::caller_info
 # @see shellx::log_internal::caller_info for more information
 # @output
-# 2024-04-03 00:16:32.919 DEBUG ./lib/shellx/cli.sh:54 - shellx() params_count->2 | parameters->debug enable
+#  2024-04-03 17:42:42.779  | DEBUG | (./lib/shellx/cli.sh:54) params_count->2 | parameters->debug enable
 shellx::__log() {
   local slug="${1:-$(shellx::log_internal::debug_slug)}"
   if shellx::debug::is_enabled; then
