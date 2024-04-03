@@ -73,7 +73,7 @@ shellx::log_internal::caller_info() {
 shellx::__log() {
   local slug="${1:-$(shellx::log_internal::debug_slug)}"
   if shellx::debug::is_enabled; then
-    printf -- '%-25s| %-17s|  %-50s| %s\n' "$(date '+%F %T.%-3N' 2>/dev/null || :) " "${slug}" "$(shellx::log_internal::caller_info)" "$(array::except_first $@)" 1>&2 || :
+    printf -- '%-25s| %-17s| (%s) %s\n' "$(date '+%F %T.%-3N' 2>/dev/null || :) " "${slug}" "$(shellx::log_internal::caller_info)" "$(array::except_first $@)" 1>&2 || :
   fi
 }
 
