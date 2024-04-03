@@ -21,3 +21,13 @@ shell::alias_exists(){
 
 #   done
 # }
+shell::get_shell() {
+  if shell::is_bash; then
+    echo "bash"
+  elif shell::is_zsh; then
+    echo "zsh"
+  else
+    echo "unknown"
+  fi
+}
+
