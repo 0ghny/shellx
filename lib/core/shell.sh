@@ -12,12 +12,13 @@ shell::alias_exists(){
   [[ "$typeMatch" == "alias" ]]
 }
 
-# TODO
-# shell::print_list_as_table() {
-#   local elements="${1}"
-#   local icon="${2:-*}"
-#   local element
-#   for element in ${elements}; do
+shell::get_shell() {
+  if shell::is_bash; then
+    echo "bash"
+  elif shell::is_zsh; then
+    echo "zsh"
+  else
+    echo "unknown"
+  fi
+}
 
-#   done
-# }

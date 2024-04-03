@@ -30,12 +30,12 @@ shellx::cli::run() {
   # Single or complex commmand
   if [[ $# -gt 1 ]]; then
     # commands like shellx plugins installed
-    shellx::log_debug "shellx::cli:run params_count->$# | parameters->$* | first_param->$1 | second_param->$2 | rest_params->${@:3}"
+    shellx::log_debug "params_count->$# | parameters->$* | first_param->$1 | second_param->$2 | rest_params->${@:3}"
     shellx::log_debug "calling complex command-> shellx::$1::$2 ${@:3}"
     eval "shellx::$1::$2 ${@:3}"
   else
     # commands like shellx info or update
-    shellx::log_debug "shellx::cli:run params_count->$# | parameters->$* | first_param->$1 | rest_params->${@:2}"
+    shellx::log_debug "params_count->$# | parameters->$* | first_param->$1 | rest_params->${@:2}"
     shellx::log_debug "calling simple command-> shellx::$1 ${@:2}"
     eval "shellx::$1 ${@:2}"
   fi
@@ -51,6 +51,6 @@ shellx::cli::run() {
 # NOTE: I'm not using aliases because aliases are not allowed in scripts
 # they're only allowed in interactive shell, so a function it's a better choice
 shellx() {
-  shellx::log_debug "shellx() params_count->$# | parameters->$*"
+  shellx::log_debug "params_count->$# | parameters->$*"
   shellx::cli::run "${@}"
 }
