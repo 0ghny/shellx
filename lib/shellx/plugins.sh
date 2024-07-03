@@ -98,10 +98,10 @@ shellx::plugins::reload() {
   shellx::log_debug "__shellx_plugins_locations => ${__shellx_plugins_locations[*]}"
   shellx::log_debug "selective plugin filter => ${SHELLX_PLUGINS[*]:-@all}"
   for location in "${__shellx_plugins_locations[@]}"; do
-    shellx::log_debug "Plugins Load: reading scripts in location ${location}"
+    shellx::log_debug "Plugins Load: reading scripts in location ${location} (sorted by name desc: 01-script.sh is first)"
     IFS=$'\n'
     # shellcheck disable=SC2207
-    files_in_current_location=($(find "${location}/" -type f -name '*.*sh'))
+    files_in_current_location=($(find "${location}/" -type f -name '*.*sh' | sort))
     unset IFS
     for file_to_load in "${files_in_current_location[@]}"; do
       shellx::log_debug "Applying selective filter to determine if plugin ${file_to_load} should be loaded"
