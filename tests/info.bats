@@ -20,14 +20,15 @@ teardown() {
   # Arrange
   # Act
   run shellx info
-
+  
   # Assert
   assert_success
   assert_output --partial "Session information:"
-  assert_output --partial  "Plugins:"
-  assert_output --regexp  'Applied\sfilter:\s\@plugins'
-  assert_output --partial  'Packages:'
-  assert_output --regexp  "\[\*\]\s[\@plugins]"
-  assert_output --partial  'Loaded:'
-  assert_output --regexp  '\[\*\]\s\@plugins/shellx_update.sh'
+  assert_output --partial "Plugins:"
+  assert_output --regexp  'Applied\sfilter:\s\@shellx'
+  assert_output --partial 'Packages:'
+  assert_output --partial "[*] [@shellx] ${SHELLX_HOME}"
+  assert_output --partial 'Loaded:'
+  assert_output --partial '[*] @shellx/shellx_update.sh'
+  assert_output --partial '[*] @shellx/wellcome.sh'
 }

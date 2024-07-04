@@ -49,12 +49,12 @@ shellx::plugins::internal::dir_reload(){
   __shellx_plugins_locations=( )
   shellx::log_debug "__shellx_plugins_locations -> ${__shellx_plugins_locations[*]}"
 
-  # BUNDLED PLUGINS: __shellx_pluginsdir location
+  # BUNDLED PLUGINS: plugins folder from inside shellx installation directory
   # shellcheck disable=SC2154
   if [[ -d "${__shellx_pluginsdir}" ]]; then
     shellx::log_debug "Bundled Plugins: adding bundled from ${__shellx_pluginsdir} to location list"
     # shellcheck disable=SC2206
-    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${__shellx_pluginsdir}" )
+    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${__shellx_homedir}" )
   else
     shellx::log_debug "Bundled Plugins: Cannot find bundled plugins directory or permissions are not correct."
   fi
@@ -98,10 +98,18 @@ shellx::plugins::reload() {
   shellx::log_debug "__shellx_plugins_locations => ${__shellx_plugins_locations[*]}"
   shellx::log_debug "selective plugin filter => ${SHELLX_PLUGINS[*]:-@all}"
   for location in "${__shellx_plugins_locations[@]}"; do
-    shellx::log_debug "Plugins Load: reading scripts in location ${location} (sorted by name desc: 01-script.sh is first)"
+    shellx::log_debug "Plugins Load: reading scripts in location ${location}/plugins (sorted by name desc: 01-script.sh is first)"
+
+    # If no folder `plugins` exists, skip
+    if [[ ! -d "${location}/plugins" ]]; then
+      shellx::log_debug "No plugins folder found in ${location}, did your plugins package follow the required structure?, skipping..."
+      continue
+    fi
+
+    # Load all plugins in the plugins folder for current plugins package location
     IFS=$'\n'
     # shellcheck disable=SC2207
-    files_in_current_location=($(find "${location}/" -type f -name '*.*sh' | sort))
+    files_in_current_location=($(find "${location}/plugins" -type f -name '*.*sh' | sort))
     unset IFS
     for file_to_load in "${files_in_current_location[@]}"; do
       shellx::log_debug "Applying selective filter to determine if plugin ${file_to_load} should be loaded"
@@ -149,7 +157,7 @@ shellx::plugins::is_installed() {
 
 shellx::plugins::installed() {
   local plugin
-  echo "Plugins Installed:"
+  echo "Plugin Packages Installed:"
   # shellcheck disable=SC2154
   for plugin in "${__shellx_plugins_locations[@]}"; do
     echo "  [*] $(basename "${plugin}") (${plugin})"

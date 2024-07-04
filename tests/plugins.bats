@@ -57,7 +57,11 @@ teardown() {
 }
 
 @test "installed should returns plugins installed" {
+  # Act
   run shellx::plugins::installed
+
+  # Assert
   assert_success
-  assert_output --partial "[*] plugins (${SHELLX_HOME}/plugins)"
+  assert_output --partial "Plugin Packages Installed:"
+  assert_output --partial "[*] shellx (${SHELLX_HOME})"
 }
