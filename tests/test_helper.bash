@@ -3,7 +3,7 @@ shellx::tests::session_start() {
   SHELLX_HOME="$(git rev-parse --show-toplevel)"
   SHELLX_PLUGINS_D=/tmp/shellx-bats-tests
   SHELLX_CONFIG=${SHELLX_HOME}/tests/shellx_config_tests
-  SHELLX_DEBUG=NO
+  SHELLX_DEBUG=no
   # Ensure directories exists
   rm -rf "${SHELLX_PLUGINS_D}"
   mkdir "${SHELLX_PLUGINS_D}"

@@ -49,12 +49,12 @@ shellx::plugins::internal::dir_reload(){
   __shellx_plugins_locations=( )
   shellx::log_debug "__shellx_plugins_locations -> ${__shellx_plugins_locations[*]}"
 
-  # BUNDLED PLUGINS: __shellx_pluginsdir location
+  # BUNDLED PLUGINS: plugins folder from inside shellx installation directory
   # shellcheck disable=SC2154
   if [[ -d "${__shellx_pluginsdir}" ]]; then
     shellx::log_debug "Bundled Plugins: adding bundled from ${__shellx_pluginsdir} to location list"
     # shellcheck disable=SC2206
-    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${__shellx_pluginsdir}" )
+    export __shellx_plugins_locations=( ${__shellx_plugins_locations[*]} "${__shellx_homedir}" )
   else
     shellx::log_debug "Bundled Plugins: Cannot find bundled plugins directory or permissions are not correct."
   fi
