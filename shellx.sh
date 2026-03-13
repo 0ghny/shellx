@@ -156,5 +156,5 @@ __shellx_feature_loadtime_end="$(date +%s)"
 # Shows a summary banner, can be skip with SHELLX_NO_BANNER variable
 # .............................................................................
 if [ -z "${SHELLX_NO_BANNER}" ]; then
-  shellx::session::info
+  shellx::info
 fi
