@@ -1,10 +1,35 @@
 # shellcheck shell=bash
 __internal_init_time="$(date +%s)"
+
+# .............................................................................
+#                                          [ COMPATIBILITY CHECK: BASH/ZSH ]
+# .............................................................................
+# ShellX requires Bash 4+ or Zsh due to the use of associative arrays and
+# advanced array operations for managing plugins and configuration.
+#
+# Supported shells:
+#   - Bash 4.0 or higher
+#   - Zsh 4.0 or higher (with emulate -L bash for maximum compatibility)
+#
+# Unsupported shells (for ShellX features):
+#   - POSIX sh (lacks arrays)
+#   - Fish shell (different data model)
+#   - Ksh (limited array support)
+#
+# NOTE: ShellX can be sourced from these shells, but plugin management and
+# advanced features require Bash or Zsh.
+#
+if [ -z "$BASH_VERSION" ] && [ -z "$ZSH_VERSION" ]; then
+  printf "ShellX: WARNING - This shell may not be fully compatible with ShellX.\n" >&2
+  printf "ShellX: Requires Bash 4+ or Zsh for full functionality.\n" >&2
+  printf "ShellX: Current shell: %s\n" "${SHELL}" >&2
+fi
+
 # Determine this script location compatible with many shells
 _under="$_"
 if [ "${BASH_SOURCE[0]}" != "" ]; then
   _shellxLocation="${BASH_SOURCE[0]}"
-elif [[ "$_under" == *".sh" ]]; then
+elif case "$_under" in *.sh) true ;; *) false ;; esac; then
   _shellxLocation="$_under"
 else
   _shellxLocation="$0"
@@ -20,20 +45,20 @@ fi
 # NOTE: if you modify this section, remember to update shellx::config::reload
 # function too. It cannot be there since libs hasn't been loaded yet
 # .............................................................................
-if [[ -n "${SHELLX_CONFIG}" ]] && [[ -r "${SHELLX_CONFIG}" ]]; then
+if [ -n "${SHELLX_CONFIG}" ] && [ -r "${SHELLX_CONFIG}" ]; then
   export __shellx_config="${SHELLX_CONFIG}"
-elif [[ -r "${HOME}"/.shellxrc ]]; then
+elif [ -r "${HOME}"/.shellxrc ]; then
   export __shellx_config="${HOME}"/.shellxrc
-elif [[ -r "${HOME}"/.config/shellx/config ]]; then
+elif [ -r "${HOME}"/.config/shellx/config ]; then
   export __shellx_config="${HOME}"/.config/shellx/config
 else
-  if [[ -n "${SHELLX_DEBUG}" ]] && \
-  [[ "$(echo "${SHELLX_DEBUG}" | tr '[:lower:]' '[:upper:]')" == "YES" ]]; then
+  if [ -n "${SHELLX_DEBUG}" ] && \
+  case "$(echo "${SHELLX_DEBUG}" | tr '[:lower:]' '[:upper:]')" in YES) true ;; *) false ;; esac; then
     echo "ShellX Configuration file not found, applying defaults."
   fi
 fi
 
-if [[ -n "${__shellx_config}" ]] && [[ -r "${__shellx_config}" ]]; then
+if [ -n "${__shellx_config}" ] && [ -r "${__shellx_config}" ]; then
   set -o allexport
   # shellcheck disable=SC1090
   source "${__shellx_config}"
@@ -51,13 +76,13 @@ export __shellx_bindir="${__shellx_homedir}/bin"
 export __shellx_libdir="${__shellx_homedir}/lib"
 export __shellx_plugins_d="${SHELLX_PLUGINS_D:-${HOME}/.shellx.plugins.d}"
 export __shellx_pluginsdir="${__shellx_homedir}/plugins"
-declare -g __shellx_feature_loadtime_start="$__internal_init_time"
-declare -g __shellx_feature_loadtime_end="$__internal_init_time"
+export __shellx_feature_loadtime_start="$__internal_init_time"
+export __shellx_feature_loadtime_end="$__internal_init_time"
 # .............................................................................
 #                                                                 [ LIBRARIES ]
 # .............................................................................
 for file_to_load in $(find "${__shellx_libdir}" -name '*.*sh' | sort); do
-  if [[ -r "${file_to_load}" ]]; then
+  if [ -r "${file_to_load}" ]; then
     # shellcheck source=/dev/null
     source "${file_to_load}"
     # shellcheck disable=SC2206
@@ -79,10 +104,10 @@ shellx::log_debug "Variable __shellx_config:      ${__shellx_config}"
 #                                                                [ HOME-EXTRA ]
 # .............................................................................
 shellx::log_info "Feature: home-extra"
-if [[ -z "${SHELLX_SKIP_EXTRA}" ]]; then
+if [ -z "${SHELLX_SKIP_EXTRA}" ]; then
   shellx::log_debug "feat(home-extra): enabled"
   for file_to_load in "${HOME}"/.{path,exports,aliases,functions,extra}; do
-    if [[ -r "${file_to_load}" ]]; then
+    if [ -r "${file_to_load}" ]; then
       shellx::log_debug "feat(home-extra): loading file ${file_to_load}"
       # shellcheck source=/dev/null
       source "${file_to_load}"
@@ -108,7 +133,7 @@ for _path in "${_PATHS[@]}"; do
   path::add "${_path}"
 done
 
-if [[ -d "${__shellx_bindir}" ]]; then
+if [ -d "${__shellx_bindir}" ]; then
   shellx::log_debug "feat(multi-bin): shellx-bin folder make scripts runnable"
   find "${__shellx_bindir}" -type f -exec chmod 744 {} \; 2>/dev/null
 else
@@ -130,6 +155,6 @@ __shellx_feature_loadtime_end="$(date +%s)"
 #                                                                    [ BANNER ]
 # Shows a summary banner, can be skip with SHELLX_NO_BANNER variable
 # .............................................................................
-if [[ -z "${SHELLX_NO_BANNER}" ]]; then
+if [ -z "${SHELLX_NO_BANNER}" ]; then
   shellx::session::info
 fi

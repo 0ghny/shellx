@@ -1,0 +1,17 @@
+# ShellX Plugin Registry Configuration
+# 
+# Format: NAME|URL[|DESCRIPTION]
+# 
+# Official repositories with community plugins
+#
+
+# Community plugins repository
+community|https://github.com/0ghny/shellx-community-plugins|Community-supported plugins
+
+# Bundled
+dotfiles|https://github.com/0ghny/shellx-dotfiles|Dotfiles plugin management
+asdf|https://github.com/0ghny/shellx-plugin-asdf|ASDF plugin
+docker stacks|https://github.com/0ghny/shellx-docker-stacks|Docker Stacks plugin
+osx|https://github.com/0ghny/shellx-plugins-osx|Utilies customized for OSX installations
+git|https://github.com/0ghny/shellx-plugins-git|Git integration plugin
+arch|https://github.com/0ghny/shellx-plugins-arch|Utilies customized for ARCH Linux
