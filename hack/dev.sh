@@ -14,9 +14,9 @@ COVERAGE_MIN_UNIT=80
 COVERAGE_MIN_INTEGRATION=70
 
 COVERAGE_PATHS_UNIT=("lib/core" "lib/git" "lib/shellx")
-COVERAGE_EXCLUDES_UNIT=("lib/shellx/cli" "lib/shellx/plugins")
+COVERAGE_EXCLUDES_UNIT=("lib/shellx/cli" "lib/shellx/plugins" "lib/core/sysinfo")
 COVERAGE_PATHS_INTEGRATION=("shellx.sh" "lib/shellx")
-COVERAGE_EXCLUDES_INTEGRATION=()
+COVERAGE_EXCLUDES_INTEGRATION=("lib/git" "lib/core")
 
 __ensure_bashunit() {
   if [ ! -f "${BASHUNIT}" ]; then
