@@ -55,6 +55,7 @@ __run_lint() {
   done < <(find "${ROOT}" -type f \
     -not -path '*/.git/*' \
     -not -path '*/plugin-examples/*' \
+    -not -path '*/target/*' \
     -not -path '*/tests/*' \
     -print0)
 
@@ -112,7 +113,29 @@ __run_test_suite() {
   printf "│  %-24s %s\n" "Tool:" "${bashunit_version}"
   printf "│  %-24s %s\n" "Coverage:" "$([ "${WITH_COVERAGE}" -eq 1 ] && echo enabled || echo disabled)"
   if [ "${WITH_COVERAGE}" -eq 1 ]; then
-    local coverage_paths="${ROOT}/lib/core,${ROOT}/lib/shellx,${ROOT}/lib/shellx/plugins,${ROOT}/lib/core/sysinfo,${ROOT}/lib/git"
+    # Build coverage_paths depending on the suite:
+    #
+    # integration: shellx.sh + lib/shellx + all subdirs of lib/shellx
+    #              (lib/core and lib/git are excluded — they are unit-tested)
+    #
+    # unit:        lib/core + all subdirs of lib/core
+    #              + lib/git
+    #              + lib/shellx (top-level only, no subdirs)
+    local -a _cov_dirs=()
+    if [ "${suite}" = "integration" ]; then
+      _cov_dirs=("${ROOT}/shellx.sh" "${ROOT}/lib/shellx")
+      while IFS= read -r -d '' _d; do
+        _cov_dirs+=("${_d}")
+      done < <(find "${ROOT}/lib/shellx" -mindepth 1 -type d -print0 | sort -z)
+    else
+      _cov_dirs=("${ROOT}/lib/core" "${ROOT}/lib/git" "${ROOT}/lib/shellx")
+      while IFS= read -r -d '' _d; do
+        _cov_dirs+=("${_d}")
+      done < <(find "${ROOT}/lib/core" -mindepth 1 -type d -print0 | sort -z)
+    fi
+    local coverage_paths
+    coverage_paths="$(IFS=, ; echo "${_cov_dirs[*]}")"
+    unset _cov_dirs _d
     printf "│  %-24s %s\n" "Coverage paths:" "${coverage_paths}"
     printf "│  %-24s %s\n" "Report dir:"     "${report_dir}"
     printf "│  %-24s %s\n" "Report HTML:"    "${suite}.html"
