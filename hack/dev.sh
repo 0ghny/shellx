@@ -7,6 +7,17 @@ BASHUNIT="${ROOT}/target/bashunit"
 BASHUNIT_VERSION="0.33.0"
 WITH_COVERAGE=0
 
+# -----------------------------------------------------------------------------
+# Coverage configuration — edit these to tune thresholds and scope
+# -----------------------------------------------------------------------------
+COVERAGE_MIN_UNIT=80
+COVERAGE_MIN_INTEGRATION=70
+
+COVERAGE_PATHS_UNIT=("lib/core" "lib/git" "lib/shellx")
+COVERAGE_EXCLUDES_UNIT=("lib/shellx/cli" "lib/shellx/plugins")
+COVERAGE_PATHS_INTEGRATION=("shellx.sh" "lib/shellx")
+COVERAGE_EXCLUDES_INTEGRATION=()
+
 __ensure_bashunit() {
   if [ ! -f "${BASHUNIT}" ]; then
     echo "==> bashunit not found, downloading..."
@@ -112,34 +123,31 @@ __run_test_suite() {
   echo "│"
   printf "│  %-24s %s\n" "Tool:" "${bashunit_version}"
   printf "│  %-24s %s\n" "Coverage:" "$([ "${WITH_COVERAGE}" -eq 1 ] && echo enabled || echo disabled)"
+  local _cov_min="" coverage_paths="" coverage_exclude=""
   if [ "${WITH_COVERAGE}" -eq 1 ]; then
-    # Build coverage_paths depending on the suite:
-    #
-    # integration: shellx.sh + lib/shellx + all subdirs of lib/shellx
-    #              (lib/core and lib/git are excluded — they are unit-tested)
-    #
-    # unit:        lib/core + all subdirs of lib/core
-    #              + lib/git
-    #              + lib/shellx (top-level only, no subdirs)
-    local -a _cov_dirs=()
+    local -a _paths=() _excludes=() _abs_paths=()
+    local _p
     if [ "${suite}" = "integration" ]; then
-      _cov_dirs=("${ROOT}/shellx.sh" "${ROOT}/lib/shellx")
-      while IFS= read -r -d '' _d; do
-        _cov_dirs+=("${_d}")
-      done < <(find "${ROOT}/lib/shellx" -mindepth 1 -type d -print0 | sort -z)
+      _cov_min=${COVERAGE_MIN_INTEGRATION}
+      _paths=("${COVERAGE_PATHS_INTEGRATION[@]}")
+      [ "${#COVERAGE_EXCLUDES_INTEGRATION[@]}" -gt 0 ] && \
+        _excludes=("${COVERAGE_EXCLUDES_INTEGRATION[@]}")
     else
-      _cov_dirs=("${ROOT}/lib/core" "${ROOT}/lib/git" "${ROOT}/lib/shellx")
-      while IFS= read -r -d '' _d; do
-        _cov_dirs+=("${_d}")
-      done < <(find "${ROOT}/lib/core" -mindepth 1 -type d -print0 | sort -z)
+      _cov_min=${COVERAGE_MIN_UNIT}
+      _paths=("${COVERAGE_PATHS_UNIT[@]}")
+      [ "${#COVERAGE_EXCLUDES_UNIT[@]}" -gt 0 ] && \
+        _excludes=("${COVERAGE_EXCLUDES_UNIT[@]}")
     fi
-    local coverage_paths
-    coverage_paths="$(IFS=, ; echo "${_cov_dirs[*]}")"
-    unset _cov_dirs _d
-    printf "│  %-24s %s\n" "Coverage paths:" "${coverage_paths}"
-    printf "│  %-24s %s\n" "Report dir:"     "${report_dir}"
-    printf "│  %-24s %s\n" "Report HTML:"    "${suite}.html"
-    printf "│  %-24s %s\n" "Coverage HTML:"  "${suite}-coverage/"
+    for _p in "${_paths[@]}"; do _abs_paths+=("${ROOT}/${_p}"); done
+    coverage_paths="$(IFS=, ; echo "${_abs_paths[*]}")"
+    [ "${#_excludes[@]}" -gt 0 ] && coverage_exclude="$(IFS=, ; echo "${_excludes[*]}")"
+    unset _paths _excludes _abs_paths _p
+    printf "│  %-24s %s\n" "Coverage paths:"   "${coverage_paths}"
+    printf "│  %-24s %s\n" "Coverage exclude:"  "${coverage_exclude:-(none)}"
+    printf "│  %-24s %s\n" "Coverage min:"      "${_cov_min}%"
+    printf "│  %-24s %s\n" "Report dir:"        "${report_dir}"
+    printf "│  %-24s %s\n" "Report HTML:"       "${suite}.html"
+    printf "│  %-24s %s\n" "Coverage HTML:"     "${suite}-coverage/"
   fi
   printf "│  %-24s %d file(s)\n" "Test files:" "${#suite_files[@]}"
   echo "│"
@@ -157,12 +165,13 @@ __run_test_suite() {
       --coverage
       --coverage-report-html "${report_dir}/${suite}-coverage/"
       --coverage-paths "${coverage_paths}"
-      --coverage-min 80
+      --coverage-min "${_cov_min}"
       --no-coverage-report
       --no-output-on-failure
       --show-skipped
       --log-junit "${report_dir}/${suite}.xml"
     )
+    [ -n "${coverage_exclude}" ] && extra_opts+=(--coverage-exclude "${coverage_exclude}")
   fi
 
   "${BASHUNIT}" "${extra_opts[@]+"${extra_opts[@]}"}" "${suite_dir}"

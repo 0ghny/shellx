@@ -68,3 +68,39 @@ function test_path_backup_default_variable_is_PATH_BAK() {
   assert_same "${PATH}" "${PATH_BAK}"
   unset PATH_BAK
 }
+
+# -----------------------------------------------------------------------------
+# path::get_absolute
+# -----------------------------------------------------------------------------
+
+function test_path_get_absolute_resolves_existing_file_relative_to_cwd() {
+  local tmpdir tmpfile result
+  tmpdir="$(mktemp -d)"
+  tmpfile="${tmpdir}/testfile.txt"
+  touch "${tmpfile}"
+  local orig_pwd="${PWD}"
+  cd "${tmpdir}" || return 1
+  result="$(path::get_absolute "testfile.txt")"
+  cd "${orig_pwd}" || return 1
+  assert_same "${tmpfile}" "${result}"
+  rm -rf "${tmpdir}"
+}
+
+function test_path_get_absolute_returns_non_empty_for_existing_path() {
+  local tmpdir tmpfile result
+  tmpdir="$(mktemp -d)"
+  tmpfile="${tmpdir}/anotherfile.txt"
+  touch "${tmpfile}"
+  local orig_pwd="${PWD}"
+  cd "${tmpdir}" || return 1
+  result="$(path::get_absolute "anotherfile.txt")"
+  cd "${orig_pwd}" || return 1
+  assert_not_empty "${result}"
+  rm -rf "${tmpdir}"
+}
+
+function test_path_get_absolute_returns_empty_for_nonexistent_path() {
+  local result
+  result="$(path::get_absolute "/shellx/does/not/exist/xyz.txt" 2>/dev/null || true)"
+  assert_empty "${result}"
+}
