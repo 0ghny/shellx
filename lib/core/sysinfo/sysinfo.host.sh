@@ -10,7 +10,8 @@ sysinfo::host::users() {
   # shellcheck disable=SC2155
   local _users="$(who | awk '!seen[$1]++ {printf $1 ", "}')"
   _users="${_users%\,*}"
-  echo "${_users}"
+  # Fall back to the current user when no interactive session is detected (e.g. CI)
+  echo "${_users:-$(whoami)}"
 }
 
 #######################################

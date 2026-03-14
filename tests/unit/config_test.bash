@@ -72,13 +72,13 @@ function test_config_reload_does_not_set_config_path_when_file_not_found() {
 # -----------------------------------------------------------------------------
 
 function test_config_print_exits_successfully() {
-  shellx::config::print > /dev/null
+  SHELLX_CONFIG="${SHELLX_HOME}/tests/config/shellx_config" shellx::config::print > /dev/null
   assert_exit_code "0"
 }
 
 function test_config_print_includes_shellx_variables() {
   local output
-  output=$(shellx::config::print)
+  output=$(SHELLX_CONFIG="${SHELLX_HOME}/tests/config/shellx_config" shellx::config::print)
   assert_contains "SHELLX_NO_BANNER" "${output}"
 }
 
