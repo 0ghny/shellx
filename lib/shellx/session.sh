@@ -17,6 +17,7 @@ shellx::session::private::libraries() {
     [ $((_i % 3)) -eq 0 ] && printf "\n"
   done
   [ $((_i % 3)) -ne 0 ] && printf "\n"
+  return 0
 }
 
 #######################################
@@ -61,6 +62,7 @@ shellx::session::private::plugins() {
     [ $((_i % 2)) -eq 0 ] && printf "\n"
   done
   [ $((_i % 2)) -ne 0 ] && printf "\n"
+  return 0
 }
 
 
