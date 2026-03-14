@@ -16,7 +16,7 @@ SHELLX_PLUGIN_UPDATE_LOCK_FILE="${SHELLX_PLUGIN_UPDATE_LOCK_FILE:-/tmp/.shellx_u
 
 # @feature check
 # @description Check if there's a new version of shellx available.
-if [[ ! -f "${SHELLX_PLUGIN_UPDATE_LOCK_FILE}" ]]; then
+if [ ! -f "${SHELLX_PLUGIN_UPDATE_LOCK_FILE}" ]; then
   shellx::plugins::log_debug "UPDATER" "shellx version hasnt been checked yet, doing it now"
   if shellx::update::available; then
     echo "There's a new shellx version available."
@@ -28,8 +28,8 @@ if [[ ! -f "${SHELLX_PLUGIN_UPDATE_LOCK_FILE}" ]]; then
 
   # @feature auto-update
   # @description Auto-update shellx if SHELLX_AUTO_UPDATE is set to YES
-  if [[ -n "${SHELLX_AUTO_UPDATE}" ]] && \
-    [[ "$(echo "${SHELLX_AUTO_UPDATE}" | tr '[:lower:]' '[:upper:]')" == "YES" ]]; then
+  if [ -n "${SHELLX_AUTO_UPDATE}" ] && \
+    case "$(echo "${SHELLX_AUTO_UPDATE}" | tr '[:lower:]' '[:upper:]')" in YES) true ;; *) false ;; esac; then
     shellx::plugins::log_debug "UPDATER" "Auto update enabled, updating it now"
     shellx::update
   else

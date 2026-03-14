@@ -20,6 +20,10 @@ So, i have ended, which probably could be called a generic script/plugin loader.
 * Having different plugins in different folders, which allows me as example to load certain folders in certains environments to load variables or any other special configurations. It also allows me to clone other users plugins easily.
 * It provides a minimal set of libraries and binaries bundled inside which offers a set of functions/aliases/etc. based on SH/BASH (compatible with other shells) to use in plugins contexts to do certain stuff easily.
 
+## Requirements
+
+ShellX requires **Bash 4.0+** or **Zsh 4.0+** for full functionality. For detailed information about shell compatibility and supported shells, see [SHELL_COMPATIBILITY.md](./docs/SHELL_COMPATIBILITY.md).
+
 ## Use it
 
 Clone this repo to your disk
@@ -70,41 +74,53 @@ Shellx once initialized, has his own CLI to make easier to interact with shellx 
 ```raw
 MANAGE SESSION
 -----------------------------------------------------------------------------
+shellx list                             List loaded plugins in current session
+shellx status                           Display current session information
+                                        (start time, load time, plugins, etc)
 shellx reset                            Resets current shell session
                                         it does a /bin/zsh reset or exec /bin/zsh
+shellx reload                           Reload plugins and configuration at once
 shellx info                             Print Shell,OS and Host information
                                         current session info
                                         (start time, load time, plugins, etc)
 
 MANAGE VERSION
 -----------------------------------------------------------------------------
-shellx version                          Prints current shellx version
-shellx version info                     Prints a nice message with
-                                        version and release notes
-shellx update                           Updates (if newer) shellx version
-                                        is available to latest release
-shellx check                            Checks if a new version is available
-                                        and print new changes
-shellx update available                 Checks if a new version is available
-                                        useful for scripting (returns 1 in
-                                        case of no new version) so you can
-                                        > shellx check && shellx update
+shellx version                          Prints current ShellX version
+shellx version info                     Prints version with release notes
+shellx version notes [N]                Prints last N release notes (default: 3)
+shellx version check                    Checks if a new version is available
+shellx self-update                      Updates ShellX to latest release
+shellx check-update                     Shows update availability and changelog
 
 TOOLS
 -----------------------------------------------------------------------------
 shellx debug enabled                    Enabled shellx debug output to stdout
 shellx debug disabled                   Disable shellx debug output to stdout
 
+CONFIGURATION
+-----------------------------------------------------------------------------
+shellx config print                     Print config file contents
+shellx config runtime                   Print active SHELLX_* session variables
+shellx config set <KEY> <VALUE>         Set a configuration key
+shellx config unset <KEY>               Remove a configuration key
+shellx config reload                    Reload configuration from file
 
 MANAGE PLUGINS
 -----------------------------------------------------------------------------
-shellx plugins install <git-url>        Installs a plugins package from
-                                        git repo url
+shellx plugins list                     List available plugin packages
+                                        from configured repositories
+shellx plugins install <name|url>       Install plugin by package name
+                                        or direct git URL
 shellx plugins installed                List installed plugin packages
-shellx plugins uninstall <plugin_name>  Uninstall specified plugins package
-shellx plugins reload                   Reloads plugins into current session
-shellx plugins loaded                   List of loaded plugins in current
-                                        current session
+shellx plugins uninstall <name>         Uninstall the specified plugin package
+shellx plugins update <name>            Update an installed plugin (git pull)
+shellx plugins reload                   Reload plugins into current session
+
+**NEW in v2.0+**: Plugin Registry System
+  - Install plugins by name instead of full URL
+  - Browse available packages with `shellx plugins list`
+  - See [Plugin Registry System](#plugin-registry-system) section for details
 ```
 
 **Note**: All CLI commands `under the hood` calls to a shellx shell function in the form of `shellx::<namespace>::<function> <parameters>`. Below in this documentation you will find some internal library functions that can be used, and can be translated of invoked using this cli even if it's not documented in this help.
@@ -181,8 +197,7 @@ Shellx includes and load a library of functions that can be used inside any plug
 | path      | path::exists            | checks if a path is already in PATH variable                                             |
 | path      | path::export            | alias of path::add with a different implementation                                       |
 | path      | path::backup            | backups current PATH content into a variable (default PATH_BAK)                          |
-| shell     | shell::function_exists  | checks if a function is already defined, returns true or false                           |
-| shell     | shell::alias_exists     | checks if an alias is already defined, returns true or false                             |
+| shell     | shell::alias_exists     | checks if an alias is already defined, returns 0 if exists, 1 if not (POSIX-compatible) |
 | stopwatch | stopwatch::capture      | returns the current date to use in stopwatch::elapsed operation                          |
 | stopwatch | stopwatch::elapsed      | elapsed time between startdate and enddate                                               |
 | sysinfo   | env::arch               | returns os architecture (386, amd64, arm, unknown)                                       |
@@ -220,8 +235,8 @@ Remember that by default all plugin commands operates with `SHELLX_PLUGINS_D` va
 ### Get current installed plugins
 
 ```shell
-$ shellx plugins installed
-Plugisn Installed:
+$ shellx installed
+Plugins Installed:
   [*] plugins (~/.shellx/plugins)
   [*] shellx-community-plugins (~/.shellx.plugins.d/shellx-community-plugins)
   [*] shellx-plugins-arch (~/.shellx.plugins.d/shellx-plugins-arch)
@@ -232,7 +247,7 @@ Plugisn Installed:
 Next example installs `shellx-plugins-arch` which contains plugins for arch linux
 
 ```shell
-$ shellx plugins install https://github.com/0ghny/shellx-plugins-arch
+$ shellx install https://github.com/0ghny/shellx-plugins-arch
 [PLUGIN] Cloning plugin into shellx plugins directory... OK
 [PLUGIN] Reloading plugins...
 ```
@@ -242,7 +257,7 @@ $ shellx plugins install https://github.com/0ghny/shellx-plugins-arch
 Next example uninstall `shellx-plugins-arch` plugin
 
 ```shell
-$ shellx plugins uninstall shellx-plugins-arch
+$ shellx uninstall shellx-plugins-arch
 [PLUGIN] shellx-plugins-arch uninstalling... OK
 ```
 
@@ -345,3 +360,121 @@ $ shellx reset
 ... once you finish debugging
 $ shellx debug disable
 ```
+
+## Plugin Registry System
+
+ShellX includes a **Plugin Registry System** that enables easy plugin discovery and installation. Instead of remembering full GitHub URLs, users can install plugins by simple names from registered repositories.
+
+### Quick Start
+
+```bash
+# List available plugin packages
+shellx plugins list
+
+# Install by package name (much simpler!)
+shellx plugins install community
+
+# Still works with direct URLs
+shellx plugins install https://github.com/user/my-plugin.git
+```
+
+### Registry File
+
+The plugin registry is located at: `plugins.repositories` (in ShellX root directory)
+
+**Format**: `NAME|URL|DESCRIPTION`
+
+```
+community|https://github.com/0ghny/shellx-community-plugins|Community-supported plugins
+examples|https://github.com/0ghny/shellx-plugin-examples|Plugin examples and templates
+enterprise|https://github.com/0ghny/shellx-enterprise-plugins|Enterprise-grade plugins
+```
+
+### Registry Configuration
+
+**Priority order** for registry file location:
+
+1. Environment variable: `SHELLX_PLUGINS_REGISTRY` (if set)
+2. User config: `~/.config/shellx/plugins.repositories`
+3. Repository root: `plugins.repositories`
+4. Bundled: `lib/shellx/plugins.repositories` (backwards compatibility)
+
+### Plugin Management Commands
+
+| Command | Description |
+|---------|-------------|
+| `shellx plugins list` | List all available plugin packages from registered repositories |
+| `shellx plugins add <name> <url> [description]` | Add a custom plugin repository |
+| `shellx plugins repositories` | List all configured plugin repositories |
+| `shellx plugins install <name\|url>` | Install plugin by package name or direct git URL |
+| `shellx plugins installed` | List installed plugin packages |
+| `shellx plugins uninstall <plugin_name>` | Uninstall a specific plugin |
+| `shellx plugins update [plugin_name]` | Update installed plugins or specific plugin |
+| `shellx plugins reload` | Reload all plugins in current session |
+
+
+### Managing Custom Repositories
+
+Add your own plugin repository:
+
+```bash
+# Add custom repository
+shellx plugins add myrepo https://github.com/me/my-plugins "My personal plugins"
+
+# Now you can install from it
+shellx plugins install myrepo
+```
+
+This creates `~/.config/shellx/plugins.repositories` extending the default registry.
+
+### For Plugin Authors
+
+To publish your plugins for ShellX:
+
+1. Create a repository with this structure:
+```
+my-awesome-plugins/
+├── plugins/
+│   ├── 00-first-plugin.sh
+│   ├── 10-second-plugin.sh
+│   └── README.md
+└── README.md
+```
+
+2. Request registration by opening an issue on the ShellX repository
+
+3. Once approved, users can install with:
+```bash
+shellx plugins install your-package-name
+```
+
+### Usage Examples
+
+**Install from official repositories**:
+```bash
+# Install community plugins
+shellx plugins install community
+
+# Install plugin examples
+shellx plugins install examples
+```
+
+**Direct URL (backward compatible)**:
+```bash
+# Old way still works
+shellx plugins install https://github.com/0ghny/shellx-community-plugins.git
+```
+
+**Provision new systems**:
+```bash
+# In your ~/.shellxrc or setup script
+eval "$(shellx plugins list | grep community)" && \
+  shellx plugins install community
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `SHELLX_PLUGINS_REGISTRY` | Path to custom registry file (overrides default lookup) |
+| `SHELLX_CONFIG_DIR` | Base directory for user config files (default: `.config/shellx`) |

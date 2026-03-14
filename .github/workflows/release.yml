@@ -36,7 +36,7 @@ jobs:
           MINOR="v${FULL_VERSION%.*}"
           # e.g: v1
           MAJOR="v${FULL_VERSION%.*.*}"
-         
+
           git tag "$PATCH"
           git tag -f "$MINOR"
           git tag -f "$MAJOR"

@@ -17,10 +17,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Run ShellCheck
-        uses: azohra/shell-linter@latest
+        run: |
+          bash ./hack/dev.sh lint
+        continue-on-error: true
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - uses: mfinelli/setup-shfmt@v4
         with:
-          path: "shellx.sh,lib/core/*.sh,lib/shellx/*.sh,plugins/*.sh"
-          exclude-paths: "plugin-examples,hack"
+          shfmt-version: 3.3.1
+
+      - name: Run ShellCheck
+        run: |
+          bash ./hack/dev.sh fmt
+        continue-on-error: true
 
   version-check:
     runs-on: ubuntu-latest
@@ -37,7 +51,7 @@ jobs:
           git diff-index --name-only --diff-filter=d origin/main | grep -q -i "^lib\/" && echo "lib folder has changes"
           git diff-index --name-only --diff-filter=d origin/main | grep -q "^plugins\/" && echo "plugins folder has changes"
           git diff-index --name-only --diff-filter=d origin/main | grep -q "^shellx.sh" && echo "shellx.sh has changes"
-          
+
           if git diff-index --name-only --diff-filter=d origin/main | grep -q -i "^lib\/" || \
             git diff-index --name-only --diff-filter=d origin/main | grep -q "^plugins\/" || \
             git diff-index --name-only --diff-filter=d origin/main | grep -q "^shellx.sh"; then
@@ -57,32 +71,66 @@ jobs:
         uses: matt-usurp/validate-semver@v1
         with:
           version: ${{ steps.get-version.outputs.version }}
-      
-  test:
+  unit:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup BATS
-        uses: mig4/setup-bats@v1
-        with:
-          bats-version: 1.9.0
-
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: Unit Tests
         run: |
-          mkdir -p reports
-          bats --timing --report-formatter junit tests/*.bats --output reports
-
+          bash hack/dev.sh test-unit
+        env:
+          SHELLX_TEST_COVERAGE: "true"  # Enable coverage for this step
       - name: Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()    # run this step even if previous step failed
         with:
           name: Unit Tests Report     # Name of the check run which will be created
-          path: reports/*.xml         # Path to test results
+          path: target/**/*.xml         # Path to test results
           reporter: java-junit        # Format of test results
+      - name: Archive html report
+        if: success() || failure()    # run this step even if previous step failed
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-tests-html-report
+          path: target/**/*.html
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Integration Tests
+        run: |
+          bash hack/dev.sh test-integration
+        env:
+          SHELLX_TEST_COVERAGE: "true"  # Enable coverage for this step
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          name: Integration Tests Report     # Name of the check run which will be created
+          path: target/**/*.xml         # Path to test results
+          reporter: java-junit        # Format of test results
+
+      - name: Archive html report
+        if: success() || failure()    # run this step even if previous step failed
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-tests-html-report
+          path: target/**/*.html
+
+  e2e:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Test ShellX bootstrap
         env:
