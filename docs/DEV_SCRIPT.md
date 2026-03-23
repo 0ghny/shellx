@@ -6,7 +6,7 @@ It provides a unified entry point for linting, formatting checks, and test execu
 ## Usage
 
 ```bash
-./hack/dev.sh [--coverage] <task>
+./hack/dev.sh [--coverage] <task> [args...]
 ```
 
 If invoked without arguments and `fzf` is available, an interactive menu is shown to pick a task.
@@ -20,7 +20,31 @@ If invoked without arguments and `fzf` is available, an interactive menu is show
 | `test-unit`        | Run the unit test suite                                  |
 | `test-integration` | Run the integration test suite                           |
 | `test`             | Run unit + integration suites                            |
+| `test-actions`     | Run CI jobs locally via `act` (ubuntu runners only)      |
 | `all`              | Run lint + fmt + test sequentially                       |
+
+## test-actions mode
+
+`test-actions` runs CI jobs locally using [`act`](https://github.com/nektos/act).
+Only ubuntu-based runners are supported — `macos-latest` jobs are skipped.
+
+By default, all ubuntu-compatible jobs are executed sequentially:
+
+```bash
+./hack/dev.sh test-actions
+```
+
+To run a single specific job, pass its name as a positional argument:
+
+```bash
+./hack/dev.sh test-actions lint
+./hack/dev.sh test-actions e2e-bash
+```
+
+Available jobs: `lint`, `fmt`, `unit`, `integration`, `e2e-bash`, `e2e-zsh`, `e2e-fish`.
+
+> **Note:** On Apple Silicon (arm64) the script automatically adds
+> `--container-architecture linux/amd64` to work around container compatibility issues.
 
 ## Coverage mode
 

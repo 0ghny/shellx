@@ -2,7 +2,7 @@
 
 ## Overview
 
-ShellX is designed to work with **Bash 4.0+** and **Zsh 4.0+**. While basic sourcing of ShellX may work in other shells, full functionality requires one of these supported shells.
+ShellX is designed to work with **Bash 4.0+**, **Zsh 4.0+**, and **Fish 3.2+**. Bash and Zsh are natively supported. Fish Shell is supported via a dedicated `shellx.fish` bootstrap file.
 
 ## Supported Shells
 
@@ -16,17 +16,41 @@ ShellX is designed to work with **Bash 4.0+** and **Zsh 4.0+**. While basic sour
 - Required for plugin management, arrays, and advanced configurations
 - Installation: Available by default on modern macOS; on Linux: `apt install zsh` or equivalent
 
+### ✅ Fish 3.2 or Higher
+- **Supported** via `shellx.fish` — do **not** source `shellx.sh` directly
+- Two modes depending on whether [`bass`](https://github.com/edc/bass) is installed:
+  - **Full mode** (bass installed): plugin-exported env vars (`GOPATH`, `JAVA_HOME`, …) propagate into the Fish session
+  - **Basic mode** (no bass): `shellx` CLI command + PATH setup only
+- Installation: `brew install fish` (macOS) or `apt install fish` (Debian/Ubuntu)
+
+#### Fish Setup
+
+1. Add `SHELLX_HOME` and source `shellx.fish` in `~/.config/fish/config.fish`:
+
+   ```fish
+   set -gx SHELLX_HOME /path/to/.shellx
+   source $SHELLX_HOME/shellx.fish
+   ```
+
+2. _(Optional)_ Install [`bass`](https://github.com/edc/bass) for full environment propagation:
+
+   ```fish
+   # With Fisher
+   fisher install edc/bass
+   ```
+
+3. To silence the basic-mode notice without installing bass:
+
+   ```fish
+   set -gx SHELLX_FISH_QUIET 1
+   ```
+
 ## Partially Supported / Unsupported Shells
 
 ### ⚠️ POSIX sh
 - ShellX will load but **plugin management will not work**
 - Reason: POSIX sh lacks associative arrays and advanced array operations
 - Use only for basic shell initialization if absolutely necessary
-
-### ❌ Fish Shell
-- **Not compatible** with ShellX architecture
-- Reason: Different data model and syntax (no true arrays like Bash/Zsh)
-- Consider using Fish-specific plugin managers instead
 
 ### ❌ Ksh (Korn Shell)
 - **Not fully compatible** with ShellX
@@ -67,6 +91,9 @@ bash --version
 
 # Zsh
 zsh --version
+
+# Fish
+fish --version
 ```
 
 ### Test ShellX Compatibility
@@ -77,6 +104,11 @@ When ShellX loads, it will check your shell automatically:
 # ShellX: WARNING - This shell may not be fully compatible with ShellX.
 # ShellX: Requires Bash 4+ or Zsh for full functionality.
 # ShellX: Current shell: /bin/sh
+
+# If Fish is detected on a wrong entrypoint, you'll see:
+# ShellX: Fish Shell detected. Source shellx.fish instead of shellx.sh.
+# ShellX: Add to ~/.config/fish/config.fish:
+# ShellX:   source /path/to/.shellx/shellx.fish
 ```
 
 ## Recommended Setup
@@ -84,10 +116,12 @@ When ShellX loads, it will check your shell automatically:
 ### Linux
 - **Primary**: Bash 4.0+ (usually pre-installed)
 - **Alternative**: Zsh (install via package manager)
+- **Alternative**: Fish 3.2+ (install via package manager, use `shellx.fish`)
 
 ### macOS
 - **Primary**: Zsh (default since macOS Catalina)
 - **Alternative**: Bash 4.0+ (via Homebrew, since system Bash 3.x is too old)
+- **Alternative**: Fish 3.2+ (via Homebrew, use `shellx.fish`)
 
 ```bash
 # Install Bash 4+ on macOS
@@ -101,16 +135,21 @@ export SHELL=$(which bash)  # if using Bash
 
 If you're currently using an unsupported shell:
 
-1. **Switch to Bash or Zsh**:
+1. **Switch to Bash, Zsh, or Fish**:
    ```bash
-   chsh -s /bin/zsh      # Set default shell to Zsh
+   chsh -s /bin/zsh                   # Set default shell to Zsh
    # or
-   chsh -s /usr/local/bin/bash  # Set default shell to Bash (if Homebrew installed)
+   chsh -s /usr/local/bin/bash        # Set default shell to Bash (Homebrew)
+   # or
+   chsh -s /usr/local/bin/fish        # Set default shell to Fish (Homebrew)
    ```
 
 2. **Restart your terminal** for changes to take effect
 
-3. **Source ShellX** in your new shell's rc file (`.bashrc` or `.zshrc`)
+3. **Source ShellX** in your new shell's rc file:
+   - Bash: add `source /path/to/shellx.sh` to `.bashrc`
+   - Zsh: add `source /path/to/shellx.sh` to `.zshrc`
+   - Fish: add `source /path/to/shellx.fish` to `~/.config/fish/config.fish`
 
 ## Troubleshooting
 
