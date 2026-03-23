@@ -269,6 +269,76 @@ __run_fmt() {
 }
 
 # -----------------------------------------------------------------------------
+# Test Actions: run GitHub Actions CI jobs locally using act
+# Usage: test-actions [JOB]   — omit JOB to run all ubuntu-compatible jobs
+# Requires: act (https://github.com/nektos/act)
+# NOTE: macos-latest runners are not supported by act; only ubuntu jobs run.
+# -----------------------------------------------------------------------------
+__run_test_actions() {
+  local job="${1:-}"
+
+  if ! command -v act &>/dev/null; then
+    echo "ERROR: 'act' is not installed." >&2
+    echo "" >&2
+    echo "  Install it with one of:" >&2
+    echo "    macOS:  brew install act" >&2
+    echo "    Linux:  curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash" >&2
+    echo "    Manual: https://github.com/nektos/act" >&2
+    return 1
+  fi
+
+  # Jobs that can run locally (ubuntu-based only — act cannot emulate macos runners)
+  local -a ubuntu_jobs=(
+    lint
+    fmt
+    unit
+    integration
+    "e2e-bash"
+    "e2e-zsh"
+    "e2e-fish"
+  )
+
+  echo "┌─────────────────────────────────────────────────────────────"
+  echo "│  GitHub Actions — local run via act"
+  echo "│"
+  printf "│  %-20s %s\n" "act version:" "$(act --version 2>/dev/null || echo unknown)"
+  printf "│  %-20s %s\n" "Workflow:" ".github/workflows/ci.yml"
+  printf "│  %-20s %s\n" "Event:" "pull_request"
+  if [ -n "${job}" ]; then
+    printf "│  %-20s %s\n" "Job filter:" "${job}"
+  else
+    printf "│  %-20s %s\n" "Jobs (ubuntu):" "${ubuntu_jobs[*]}"
+    printf "│  %-20s %s\n" "Skipped:" "macos-latest runners (not supported by act)"
+  fi
+  echo "└─────────────────────────────────────────────────────────────"
+  echo ""
+
+  local act_opts=(
+    pull_request
+    --workflows "${ROOT}/.github/workflows/ci.yml"
+    --directory "${ROOT}"
+    # --action-offline-mode
+  )
+
+  # On Apple Silicon (arm64) force amd64 emulation to avoid container issues
+  if [[ "$(uname -m)" == "arm64" ]]; then
+    act_opts+=(--container-architecture linux/amd64)
+  fi
+
+  if [ -n "${job}" ]; then
+    act "${act_opts[@]}" --job "${job}"
+  else
+    local exit_code=0
+    for j in "${ubuntu_jobs[@]}"; do
+      echo "==> Running job: ${j}"
+      act "${act_opts[@]}" --job "${j}" || exit_code=$?
+      echo ""
+    done
+    return "${exit_code}"
+  fi
+}
+
+# -----------------------------------------------------------------------------
 # All: lint + fmt + tests
 # -----------------------------------------------------------------------------
 __run_all() {
@@ -292,10 +362,11 @@ __run_task() {
     test-unit)        __run_tests_unit        ;;
     test-integration) __run_tests_integration ;;
     test)             __run_tests             ;;
+    test-actions)     __run_test_actions "${2:-}" ;;
     all)              __run_all               ;;
     *)
       echo "Unknown task: ${task}" >&2
-      echo "Usage: $(basename "$0") lint|fmt|test-unit|test-integration|test|all" >&2
+      echo "Usage: $(basename "$0") lint|fmt|test-unit|test-integration|test|test-actions [JOB]|all" >&2
       exit 1
       ;;
   esac
@@ -319,13 +390,13 @@ set -- "${_args[@]+"${_args[@]}"}"
 
 if [ -z "${1:-}" ]; then
   if ! command -v fzf &>/dev/null; then
-    echo "fzf not found. Usage: $(basename "$0") [--coverage] lint|fmt|test-unit|test-integration|test|all" >&2
+    echo "fzf not found. Usage: $(basename "$0") [--coverage] lint|fmt|test-unit|test-integration|test|test-actions [JOB]|all" >&2
     exit 1
   fi
-  selected=$(printf 'lint\nfmt\ntest-unit\ntest-integration\ntest\nall\n' \
+  selected=$(printf 'lint\nfmt\ntest-unit\ntest-integration\ntest\ntest-actions\nall\n' \
     | fzf --prompt="Select task > " --height=6 --border --ansi)
   [ -z "${selected}" ] && exit 0
   __run_task "${selected}"
 else
-  __run_task "${1}"
+  __run_task "$@"
 fi

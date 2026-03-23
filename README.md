@@ -32,6 +32,20 @@ Clone this repo to your disk
 git clone https://github.com/0ghny/shellx ~/.shellx
 ```
 
+Alternatively, you can install ShellX in a single command using the install script:
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/0ghny/shellx/main/install.sh | bash
+```
+
+To install a specific version, pass the `--version` flag:
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/0ghny/shellx/main/install.sh | bash -s -- --version v2.0.0
+```
+
+See [install.sh](./install.sh) for details on what the script does and the options it accepts.
+
 Once cloned, modify your .zshrc or .bashrc or any *rc from a compatible shell to start shellx bootstrap with your shell. Below, an example to use it with ZSHell (add lines to end of your .zshrc file)
 
 ```shell
@@ -478,3 +492,15 @@ eval "$(shellx plugins list | grep community)" && \
 |----------|-------------|
 | `SHELLX_PLUGINS_REGISTRY` | Path to custom registry file (overrides default lookup) |
 | `SHELLX_CONFIG_DIR` | Base directory for user config files (default: `.config/shellx`) |
+
+---
+
+## More documentation
+
+Detailed documentation is available in the [`docs/`](./docs/) folder:
+
+| Document | Description |
+|---|---|
+| [QUICK_START.md](./docs/QUICK_START.md) | Step-by-step guide for new users: installation, first session, everyday CLI commands, writing your first plugin, and installing community plugins. |
+| [SHELL_COMPATIBILITY.md](./docs/SHELL_COMPATIBILITY.md) | Supported shells (Bash, Zsh, Fish), minimum versions, setup instructions for each, and notes on partially supported shells. |
+| [DEV_SCRIPT.md](./docs/DEV_SCRIPT.md) | Reference for `hack/dev.sh` — the developer task runner used for linting, formatting, testing, and running CI jobs locally. |

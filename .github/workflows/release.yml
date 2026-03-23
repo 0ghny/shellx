@@ -14,7 +14,7 @@ jobs:
     name: "Release Version"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -22,7 +22,7 @@ jobs:
         run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
       - id: semver
-        uses: matt-usurp/validate-semver@v1
+        uses: matt-usurp/validate-semver@v2
         with:
           version: ${{ steps.get-version.outputs.version }}
 
@@ -44,7 +44,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: ncipollo/release-action@v1.14.0
+        uses: ncipollo/release-action@v1.21.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

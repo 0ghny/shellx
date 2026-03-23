@@ -19,7 +19,16 @@ __internal_init_time="$(date +%s)"
 # NOTE: ShellX can be sourced from these shells, but plugin management and
 # advanced features require Bash or Zsh.
 #
+# Fish Shell users: source shellx.fish instead:
+#   https://github.com/0ghny/shellx — see shellx.fish
+#
 if [ -z "$BASH_VERSION" ] && [ -z "$ZSH_VERSION" ]; then
+  if [ -n "${FISH_VERSION:-}" ]; then
+    printf "ShellX: Fish Shell detected. Source shellx.fish instead of shellx.sh.\n" >&2
+    printf "ShellX: Add to ~/.config/fish/config.fish:\n" >&2
+    printf "ShellX:   source %s/shellx.fish\n" "${SHELLX_HOME:-$(dirname "$0")}" >&2
+    return 1 2>/dev/null; exit 1
+  fi
   printf "ShellX: WARNING - This shell may not be fully compatible with ShellX.\n" >&2
   printf "ShellX: Requires Bash 4+ or Zsh for full functionality.\n" >&2
   printf "ShellX: Current shell: %s\n" "${SHELL}" >&2

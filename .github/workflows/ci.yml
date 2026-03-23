@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/ci.yml"
       - "shellx.sh"
+      - "shellx.fish"
       - "lib/**"
       - "plugins/**"
       - "tests/**"
@@ -15,7 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
+      - uses: pollenjp/setup-shellcheck@v1
+        with:
+          version: latest
+          # version: 0.10.0
+      # - name: Install ShellCheck if missing
+      #   run: |
+      #     command -v shellcheck >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y shellcheck)
       - name: Run ShellCheck
         run: |
           bash ./hack/dev.sh lint
@@ -25,13 +33,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - uses: mfinelli/setup-shfmt@v4
         with:
           shfmt-version: 3.3.1
 
-      - name: Run ShellCheck
+      - name: Run Shfmt
         run: |
           bash ./hack/dev.sh fmt
         continue-on-error: true
@@ -75,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Unit Tests
         run: |
@@ -100,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Integration Tests
         run: |
@@ -123,35 +131,161 @@ jobs:
           name: integration-tests-html-report
           path: target/**/*.html
 
-  e2e:
+  e2e-bash:
+    # Tests Bash support on Ubuntu (pre-installed Bash 5.x) and macOS (Bash 4+ via Homebrew,
+    # since the system Bash on macOS is 3.x which is below the minimum supported version).
+    name: "e2e / bash (${{ matrix.os }})"
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Test ShellX bootstrap
-        env:
-          SHELLX_DEBUG: yes
-          SHELLX_HOME: ${{ github.workspace }}
-        run: source shellx.sh
+      - name: Install Bash 4+ (macOS only)
+        if: runner.os == 'macOS'
+        run: brew install bash
 
-      - name: e2e ShellX cli
-        env:
-          SHELLX_DEBUG: yes
-          SHELLX_HOME: ${{ github.workspace }}
+      - name: Verify Bash meets minimum version (>= 4.0)
         run: |
-          # https://github.com/actions/toolkit/issues/766
-          echo "Enabling aliases definition"
-          shopt -s expand_aliases
+          major=$(bash --version | head -1 | grep -oE '[0-9]+' | head -1)
+          echo "Detected Bash major version: $major (required: >= 4)"
+          [ "$major" -ge 4 ] || { echo "ERROR: Bash $major is below the minimum required version (4)"; exit 1; }
 
-          echo "Bootstrapping shellx"
+      - name: Bootstrap ShellX
+        shell: bash
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_NO_BANNER: "1"
+        run: |
+          shopt -s expand_aliases
           source shellx.sh
 
-          echo "Checking shellx version command"
+      - name: shellx version
+        shell: bash
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_NO_BANNER: "1"
+        run: |
+          shopt -s expand_aliases
+          source shellx.sh
           shellx version
 
-          echo "Checking shellx info command"
+      - name: shellx info
+        shell: bash
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_NO_BANNER: "1"
+        run: |
+          shopt -s expand_aliases
+          source shellx.sh
           shellx info
+
+  e2e-zsh:
+    # Tests Zsh support on both Linux and macOS runners.
+    # Zsh is pre-installed on macOS; installed via apt on Linux.
+    name: "e2e / zsh (${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Zsh (Linux only)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y zsh
+
+      - name: Verify Zsh meets minimum version (>= 4.0)
+        shell: zsh {0}
+        run: |
+          major=$(zsh --version | grep -oE '[0-9]+' | head -1)
+          echo "Detected Zsh major version: $major (required: >= 4)"
+          [[ "$major" -ge 4 ]] || { echo "ERROR: Zsh $major is below the minimum required version (4)"; exit 1; }
+
+      - name: Bootstrap ShellX
+        shell: zsh {0}
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_NO_BANNER: "1"
+        run: source shellx.sh
+
+      - name: shellx version
+        shell: zsh {0}
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_NO_BANNER: "1"
+        run: |
+          source shellx.sh
+          shellx version
+
+      - name: shellx info
+        shell: zsh {0}
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_NO_BANNER: "1"
+        run: |
+          source shellx.sh
+          shellx info
+
+  e2e-fish:
+    # Tests Fish Shell support (>= 3.2) via shellx.fish on Linux and macOS.
+    # Linux: installed via apt. macOS: installed via Homebrew.
+    name: "e2e / fish (${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Fish Shell (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fish
+
+      - name: Install Fish Shell (macOS)
+        if: runner.os == 'macOS'
+        run: brew install fish
+
+      - name: Verify Fish meets minimum version (>= 3.2)
+        run: |
+          version=$(fish --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+          major=$(echo "$version" | cut -d. -f1)
+          minor=$(echo "$version" | cut -d. -f2)
+          echo "Detected Fish version: $version (required: >= 3.2)"
+          if [ "$major" -gt 3 ]; then
+            echo "OK"
+          elif [ "$major" -eq 3 ] && [ "$minor" -ge 2 ]; then
+            echo "OK"
+          else
+            echo "ERROR: Fish $version is below the minimum required version (3.2)"; exit 1
+          fi
+
+      - name: Bootstrap ShellX (Fish)
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_FISH_QUIET: "1"
+        run: |
+          fish -c 'source "$SHELLX_HOME/shellx.fish" && echo "Fish bootstrap: OK"'
+
+      - name: shellx version (Fish)
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_FISH_QUIET: "1"
+        run: |
+          fish -c 'source "$SHELLX_HOME/shellx.fish" && shellx version'
+
+      - name: shellx info (Fish)
+        env:
+          SHELLX_HOME: ${{ github.workspace }}
+          SHELLX_FISH_QUIET: "1"
+        run: |
+          fish -c 'source "$SHELLX_HOME/shellx.fish" && shellx info'

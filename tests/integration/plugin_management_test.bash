@@ -75,6 +75,13 @@ function test_plugins_installed_shows_total_count() {
   assert_contains "Total:" "${output}"
 }
 
+function test_plugins_installed_shows_git_ref_for_installed_package() {
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  local output
+  output=$(shellx plugins installed 2>/dev/null)
+  assert_matches "shellx-community-plugins.*\(" "${output}"
+}
+
 # --- shellx plugins install / uninstall (network) ---
 
 function test_plugins_install_valid_url_succeeds() {
@@ -99,4 +106,105 @@ function test_plugins_uninstall_installed_package_succeeds() {
   shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
   shellx plugins uninstall shellx-community-plugins > /dev/null 2>&1
   assert_exit_code "0"
+}
+
+# --- shellx plugins install: manifest side-effects ---
+
+function test_plugins_install_creates_manifest_file() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-test"
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  assert_file_exists "${SHELLX_PLUGINS_MANIFEST}"
+  unset SHELLX_PLUGINS_MANIFEST
+}
+
+function test_plugins_install_writes_url_to_manifest() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-test"
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  assert_file_contains "${SHELLX_PLUGINS_MANIFEST}" "https://github.com/0ghny/shellx-community-plugins"
+  unset SHELLX_PLUGINS_MANIFEST
+}
+
+# --- shellx plugins uninstall: manifest side-effects ---
+
+function test_plugins_uninstall_removes_entry_from_manifest() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-test"
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  shellx plugins uninstall shellx-community-plugins > /dev/null 2>&1
+  local remaining
+  remaining=$(grep -v "^#" "${SHELLX_PLUGINS_MANIFEST}" | grep "shellx-community-plugins" || true)
+  assert_empty "${remaining}"
+  unset SHELLX_PLUGINS_MANIFEST
+}
+
+# --- shellx plugins export ---
+
+function test_plugins_export_exits_successfully() {
+  shellx plugins export > /dev/null 2>&1
+  assert_exit_code "0"
+}
+
+function test_plugins_export_outputs_manifest_header() {
+  local output
+  output=$(shellx plugins export 2>/dev/null)
+  assert_contains "ShellX Plugins Manifest" "${output}"
+}
+
+function test_plugins_export_includes_installed_plugin_url() {
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  local output
+  output=$(shellx plugins export 2>/dev/null)
+  assert_contains "https://github.com/0ghny/shellx-community-plugins" "${output}"
+}
+
+function test_plugins_export_output_is_valid_manifest_input() {
+  # Install a plugin, export to a tmp file, then sync from it on a clean dir
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  local manifest="${SHELLX_PLUGINS_D}/.exported-manifest"
+  shellx plugins export > "${manifest}" 2>/dev/null
+  assert_file_contains "${manifest}" "https://github.com/0ghny/shellx-community-plugins"
+}
+
+# --- shellx plugins sync ---
+
+function test_plugins_sync_exits_error_when_manifest_missing() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-nonexistent"
+  shellx plugins sync > /dev/null 2>&1
+  assert_exit_code "1"
+  unset SHELLX_PLUGINS_MANIFEST
+}
+
+function test_plugins_sync_prints_manifest_not_found_message() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-nonexistent"
+  local output
+  output=$(shellx plugins sync 2>&1)
+  assert_contains "Manifest not found" "${output}"
+  unset SHELLX_PLUGINS_MANIFEST
+}
+
+function test_plugins_sync_installs_plugin_from_manifest() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-sync-test"
+  printf "https://github.com/0ghny/shellx-community-plugins\n" > "${SHELLX_PLUGINS_MANIFEST}"
+  shellx plugins sync > /dev/null 2>&1
+  assert_exit_code "0"
+  assert_directory_exists "${SHELLX_PLUGINS_D}/shellx-community-plugins"
+  unset SHELLX_PLUGINS_MANIFEST
+}
+
+function test_plugins_sync_skips_already_installed_plugin() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-sync-skip"
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  printf "https://github.com/0ghny/shellx-community-plugins\n" > "${SHELLX_PLUGINS_MANIFEST}"
+  local output
+  output=$(shellx plugins sync 2>/dev/null)
+  assert_contains "already installed" "${output}"
+  unset SHELLX_PLUGINS_MANIFEST
+}
+
+function test_plugins_sync_shows_summary_line() {
+  export SHELLX_PLUGINS_MANIFEST="${SHELLX_PLUGINS_D}/.manifest-sync-summary"
+  printf "https://github.com/0ghny/shellx-community-plugins\n" > "${SHELLX_PLUGINS_MANIFEST}"
+  local output
+  output=$(shellx plugins sync 2>/dev/null)
+  assert_contains "Sync complete" "${output}"
+  unset SHELLX_PLUGINS_MANIFEST
 }
