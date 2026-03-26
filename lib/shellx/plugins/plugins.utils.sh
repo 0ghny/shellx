@@ -26,79 +26,68 @@ shellx::plugins::name() {
 }
 
 #######################################
-# Lists all currently loaded plugins in a tree view grouped by package.
-# Reads from __shellx_plugins_loaded and renders a colored tree structure
-# using box-drawing characters.
-# Globals:
-#   __shellx_plugins_loaded - Array of loaded plugin identifiers (@pkg/file.sh).
-#   _color_*                - Color variables from lib/core/colors.sh.
-# Outputs:
-#   Writes formatted plugin tree to stdout.
+# Checks whether a plugin package is installed (directory exists).
+# Arguments:
+#   $1 - Plugin package name.
+# Returns:
+#   0 if installed, 1 otherwise.
 #######################################
-shellx::plugins::loaded() {
-  # Declare all locals at top to avoid Bash/Zsh scoping differences in loops
-  local _plug _group _g _plugin _parent _child_prefix _group_prefix _plugin_prefix
-  local _found _total_groups _group_count _pcount _ppos _plugin_count
-  local -a _groups _group_plugins
+shellx::plugins::is_installed() {
+  io::exists "$(shellx::plugins::path "${1}")"
+}
 
-  _plugin_count=${#__shellx_plugins_loaded[@]}
+#######################################
+# Internal helper: prints the raw list of installed plugin package paths.
+# Globals:
+#   __shellx_plugins_locations - Array of plugin package locations.
+# Outputs:
+#   Writes space-separated plugin location paths to stdout.
+#######################################
+shellx::plugins::internal::list_intalled(){
+  echo "${__shellx_plugins_locations[*]}"
+}
 
-  echo ""
-  echo -e "${_color_bold_cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${_color_reset}"
-  echo -e "${_color_bold_blue}  📦 ShellX Loaded Plugins${_color_reset}"
-  echo -e "${_color_bold_cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${_color_reset}"
+#######################################
+# Updates an installed plugin package by running git pull inside its directory.
+# The plugin directory must be a git repository (installed via git clone).
+# Arguments:
+#   $1 - Plugin package name (directory name under __shellx_plugins_d).
+# Globals:
+#   __shellx_plugins_d - Base directory for user-installed plugins.
+# Outputs:
+#   Writes status messages to stdout; errors to stderr.
+# Returns:
+#   0 on success, 1 if the plugin is not found or is not a git repository.
+#######################################
+shellx::plugins::update() {
+  local name="${1:-}"
 
-  if [ "${_plugin_count}" -eq 0 ]; then
-    echo -e "  ${_color_yellow}No plugins loaded${_color_reset}"
-    echo ""
-    return
+  if [ -z "${name}" ]; then
+    echo "Usage: shellx update <plugin-name>" >&2
+    return 1
   fi
 
-  # First pass: collect unique parent groups preserving order
-  # Use parameter expansion ${_plug%/*} to extract group — zero subshells
-  _groups=()
-  for _plug in "${__shellx_plugins_loaded[@]}"; do
-    _parent="${_plug%/*}"
-    _found=0
-    for _g in "${_groups[@]+"${_groups[@]}"}"; do
-      [ "$_g" = "$_parent" ] && _found=1 && break
-    done
-    [ "$_found" -eq 0 ] && _groups+=("$_parent")
-  done
+  # shellcheck disable=SC2154
+  local plugin_dir="${__shellx_plugins_d}/${name}"
 
-  _total_groups=${#_groups[@]}
-  _group_count=0
+  if [ ! -d "${plugin_dir}" ]; then
+    shellx::log_error "Plugin '${name}' is not installed (${plugin_dir} not found)"
+    return 1
+  fi
 
-  # Second pass: for each group, print header then its plugins
-  for _group in "${_groups[@]}"; do
-    _group_count=$((_group_count + 1))
+  if [ ! -d "${plugin_dir}/.git" ]; then
+    shellx::log_error "Plugin '${name}' is not a git repository — cannot update"
+    return 1
+  fi
 
-    if [ "$_group_count" -eq "$_total_groups" ]; then
-      _group_prefix="└──"; _child_prefix="    "
-    else
-      _group_prefix="├──"; _child_prefix="│   "
-    fi
-
-    echo -e "  ${_color_green}${_group_prefix}${_color_reset} ${_color_bold_white}${_group}${_color_reset}"
-
-    _group_plugins=()
-    for _plug in "${__shellx_plugins_loaded[@]}"; do
-      _parent="${_plug%/*}"
-      [ "$_parent" = "$_group" ] && _group_plugins+=("$_plug")
-    done
-
-    _pcount=${#_group_plugins[@]}
-    _ppos=0
-    for _plugin in "${_group_plugins[@]}"; do
-      _ppos=$((_ppos + 1))
-      [ "$_ppos" -eq "$_pcount" ] && _plugin_prefix="└──" || _plugin_prefix="├──"
-      echo -e "  ${_child_prefix}${_color_green}${_plugin_prefix}${_color_reset} ${_color_bold_white}${_plugin}${_color_reset}"
-    done
-  done
-
-  echo -e "${_color_bold_cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${_color_reset}"
-  echo -e "  ${_color_bold_yellow}Total: ${_plugin_count} plugin${_plugin_count:+s}${_color_reset}"
-  echo ""
+  echo -n "Updating plugin '${name}'...   "
+  if git -C "${plugin_dir}" pull --ff-only >/dev/null 2>&1; then
+    echo "done."
+  else
+    echo "error." >&2
+    shellx::log_error "Failed to update plugin '${name}'. Check git status in ${plugin_dir}"
+    return 1
+  fi
 }
 
 #######################################
@@ -121,7 +110,7 @@ shellx::plugins::is_installed() {
 #   Writes formatted plugin package tree to stdout.
 #######################################
 shellx::plugins::installed() {
-  local _pkg _total _count _prefix
+  local _pkg _total _count _prefix _ref _ref_label
 
   # shellcheck disable=SC2154
   _total=${#__shellx_plugins_locations[@]}
@@ -141,7 +130,20 @@ shellx::plugins::installed() {
   for _pkg in "${__shellx_plugins_locations[@]+"${__shellx_plugins_locations[@]}"}"; do
     _count=$((_count + 1))
     [ "${_count}" -eq "${_total}" ] && _prefix="└──" || _prefix="├──"
-    echo -e "  ${_color_green}${_prefix}${_color_reset} ${_color_bold_white}$(basename "${_pkg}")${_color_reset}  ${_color_cyan}${_pkg}${_color_reset}"
+
+    # Resolve current git ref: branch → tag → short commit
+    if [ -d "${_pkg}/.git" ]; then
+      _ref=$(git -C "${_pkg}" symbolic-ref --short HEAD 2>/dev/null \
+             || git -C "${_pkg}" describe --tags --exact-match HEAD 2>/dev/null \
+             || git -C "${_pkg}" rev-parse --short HEAD 2>/dev/null \
+             || true)
+    else
+      _ref=""
+    fi
+
+    [ -n "${_ref}" ] && _ref_label=" ${_color_yellow}(${_ref})${_color_reset}" || _ref_label=""
+
+    echo -e "  ${_color_green}${_prefix}${_color_reset} ${_color_bold_white}$(basename "${_pkg}")${_color_reset}${_ref_label}  ${_color_cyan}${_pkg}${_color_reset}"
   done
 
   echo -e "${_color_bold_cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${_color_reset}"

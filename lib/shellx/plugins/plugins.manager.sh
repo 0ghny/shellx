@@ -144,25 +144,27 @@ shellx::plugins::manager::resolve_url() {
 #######################################
 # Installs a plugin package by cloning its git repository.
 # Accepts either a registered package name or a direct git URL.
-# After a successful clone, reloads all plugins.
+# After a successful clone, saves the entry to the manifest and reloads plugins.
 # Arguments:
 #   $1 - Package name from the registry, or a direct repository URL.
+#   $2 - (Optional) Git ref (branch, tag, or commit) to check out.
 # Returns:
 #   0 on success, 1 if already installed, invalid input, or clone fails.
 #######################################
 # shellcheck disable=SC2154
 shellx::plugins::install() {
   local input="${1}"
+  local ref="${2:-}"
   local plugin_url
   local plugin_name
-  
+
   # Validate input
   if [ -z "${input}" ]; then
-    echo "[PLUGIN] Usage: shellx::plugins::install <package-name|url>"
+    echo "[PLUGIN] Usage: shellx::plugins::install <package-name|url> [ref]"
     echo "[PLUGIN] Available packages: $(shellx::plugins::list | tr '\n' ' ')"
     return 1
   fi
-  
+
   # Resolve package name to URL or use direct URL
   if plugin_url=$(shellx::plugins::manager::resolve_url "${input}"); then
     plugin_name=$(basename "${plugin_url}" .git)
@@ -171,20 +173,25 @@ shellx::plugins::install() {
     echo "[PLUGIN] Available packages: $(shellx::plugins::list | tr '\n' ' ')"
     return 1
   fi
-  
+
   # check if it's already installed
   if [ -d "${__shellx_plugins_d}/${plugin_name}" ]; then
     echo "[PLUGIN] ${plugin_name} is already installed!"
     return 1 # Return failure to indicate it's already installed
   fi
-  
+
+  # Build clone arguments, adding --branch only when a ref is specified
+  local clone_args=( "${plugin_url}" "${__shellx_plugins_d}/${plugin_name}" )
+  if [ -n "${ref}" ]; then
+    clone_args=( --branch "${ref}" "${plugin_url}" "${__shellx_plugins_d}/${plugin_name}" )
+  fi
+
   echo -n "[PLUGIN] Installing ${plugin_name} from ${plugin_url}..."
-  git clone \
-          "${plugin_url}" "${__shellx_plugins_d}/${plugin_name}" \
-      2>/dev/null 1>&2 \
+  git clone "${clone_args[@]}" 2>/dev/null 1>&2 \
     && {
       echo -e " ${_color_green}OK${_color_reset}"
 
+      shellx::plugins::manifest::save "${plugin_url}" "${ref}"
       echo "[PLUGIN] Reloading plugins..."
       shellx::plugins::reload
     } || (echo -e " ${_color_red}KO${_color_reset}"; return 1)
@@ -209,6 +216,7 @@ shellx::plugins::uninstall() {
       2>/dev/null 1>&2 \
     && {
       echo -e " ${_color_green}OK${_color_reset}"
+      shellx::plugins::manifest::remove "${plugin_name}"
       shellx::plugins::internal::dir_reload
     } || echo -e " ${_color_red}KO${_color_reset}"
   fi
