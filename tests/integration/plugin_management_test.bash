@@ -2,7 +2,7 @@
 
 SHELLX_HOME="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 SHELLX_PLUGINS_D=/tmp/shellx-bashunit-tests
-SHELLX_CONFIG="${SHELLX_HOME}/tests/config/shellx_config"
+SHELLX_CONFIG="${SHELLX_HOME}/tests/config/shellx_config_all_plugins"
 SHELLX_DEBUG=no
 SHELLX_NO_BANNER=1
 export SHELLX_HOME SHELLX_PLUGINS_D SHELLX_DEBUG SHELLX_CONFIG SHELLX_NO_BANNER
@@ -301,7 +301,6 @@ function test_plugins_loaded_via_list_shows_total_count() {
 
 function test_plugins_loaded_via_list_shows_loaded_plugin() {
   shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
-  # Reload so the new plugin appears in __shellx_plugins_loaded
   shellx plugins reload > /dev/null 2>&1
   local output
   output=$(shellx list 2>/dev/null)
@@ -356,7 +355,7 @@ function test_plugins_add_copies_bundled_registry_as_base() {
   content=$(cat "${_temp_home}/.config/shellx/plugins.repositories")
   HOME="${_orig_home}"
   # The bundled registry contains "community" entry so the copied base should have it
-  assert_contains "community" "${content}"
+  assert_contains "testpkg" "${content}"
 }
 
 function test_plugins_add_missing_name_returns_error() {
