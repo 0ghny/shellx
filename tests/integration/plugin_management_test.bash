@@ -208,3 +208,163 @@ function test_plugins_sync_shows_summary_line() {
   assert_contains "Sync complete" "${output}"
   unset SHELLX_PLUGINS_MANIFEST
 }
+
+# --- shellx plugins install: no args (usage error path) ---
+
+function test_plugins_install_no_args_returns_error() {
+  shellx plugins install > /dev/null 2>&1
+  assert_exit_code "1"
+}
+
+function test_plugins_install_no_args_shows_usage() {
+  local output
+  output=$(shellx plugins install 2>&1)
+  assert_contains "Usage" "${output}"
+}
+
+# --- shellx plugins install: by registry name (exercises get_url / exists / resolve_url name path) ---
+
+function test_plugins_install_by_package_name_succeeds() {
+  shellx plugins install community > /dev/null 2>&1
+  assert_exit_code "0"
+}
+
+function test_plugins_install_by_package_name_creates_directory() {
+  shellx plugins install community > /dev/null 2>&1
+  assert_directory_exists "${SHELLX_PLUGINS_D}/shellx-community-plugins"
+}
+
+function test_plugins_install_unknown_package_name_fails() {
+  shellx plugins install totally-unknown-package-xyz-123 > /dev/null 2>&1
+  assert_exit_code "1"
+}
+
+function test_plugins_install_unknown_package_name_shows_not_found_message() {
+  local output
+  output=$(shellx plugins install totally-unknown-package-xyz-123 2>&1)
+  assert_contains "not found" "${output}"
+}
+
+# --- shellx plugins uninstall: not-installed path ---
+
+function test_plugins_uninstall_not_installed_shows_message() {
+  local output
+  output=$(shellx plugins uninstall nonexistent-plugin-xyz 2>&1)
+  assert_contains "not installed" "${output}"
+}
+
+# --- shellx plugins update ---
+
+function test_plugins_update_installed_plugin_exits_successfully() {
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  shellx plugins update shellx-community-plugins > /dev/null 2>&1
+  assert_exit_code "0"
+}
+
+function test_plugins_update_installed_plugin_shows_done() {
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  local output
+  output=$(shellx plugins update shellx-community-plugins 2>/dev/null)
+  assert_contains "done" "${output}"
+}
+
+function test_plugins_update_not_installed_plugin_fails() {
+  shellx plugins update nonexistent-plugin-xyz > /dev/null 2>&1
+  assert_exit_code "1"
+}
+
+# --- shellx plugins reload ---
+
+function test_plugins_reload_exits_successfully() {
+  shellx plugins reload > /dev/null 2>&1
+  assert_exit_code "0"
+}
+
+# --- shellx list (shellx::plugins::loaded) ---
+
+function test_plugins_loaded_via_list_exits_successfully() {
+  shellx list > /dev/null 2>&1
+  assert_exit_code "0"
+}
+
+function test_plugins_loaded_via_list_shows_header() {
+  local output
+  output=$(shellx list 2>/dev/null)
+  assert_contains "ShellX Loaded Plugins" "${output}"
+}
+
+function test_plugins_loaded_via_list_shows_total_count() {
+  local output
+  output=$(shellx list 2>/dev/null)
+  assert_contains "Total:" "${output}"
+}
+
+function test_plugins_loaded_via_list_shows_loaded_plugin() {
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  # Reload so the new plugin appears in __shellx_plugins_loaded
+  shellx plugins reload > /dev/null 2>&1
+  local output
+  output=$(shellx list 2>/dev/null)
+  assert_contains "shellx-community-plugins" "${output}"
+}
+
+# --- shellx::plugins::add (direct function calls, exercises plugins.manager.sh::add) ---
+
+function test_plugins_add_creates_user_config_file() {
+  local _orig_home="${HOME}"
+  local _temp_home="${SHELLX_PLUGINS_D}/add-test-home-create"
+  mkdir -p "${_temp_home}"
+  HOME="${_temp_home}"
+  shellx::plugins::add "testpkg" "https://github.com/example/testpkg" > /dev/null 2>&1
+  local _exit=$?
+  HOME="${_orig_home}"
+  assert_same "0" "${_exit}"
+  assert_file_exists "${_temp_home}/.config/shellx/plugins.repositories"
+}
+
+function test_plugins_add_writes_entry_to_user_config() {
+  local _orig_home="${HOME}"
+  local _temp_home="${SHELLX_PLUGINS_D}/add-test-home-entry"
+  mkdir -p "${_temp_home}"
+  HOME="${_temp_home}"
+  shellx::plugins::add "testpkg" "https://github.com/example/testpkg" "A test plugin" > /dev/null 2>&1
+  local content
+  content=$(cat "${_temp_home}/.config/shellx/plugins.repositories")
+  HOME="${_orig_home}"
+  assert_contains "testpkg" "${content}"
+}
+
+function test_plugins_add_writes_url_to_user_config() {
+  local _orig_home="${HOME}"
+  local _temp_home="${SHELLX_PLUGINS_D}/add-test-home-url"
+  mkdir -p "${_temp_home}"
+  HOME="${_temp_home}"
+  shellx::plugins::add "testpkg" "https://github.com/example/testpkg" > /dev/null 2>&1
+  local content
+  content=$(cat "${_temp_home}/.config/shellx/plugins.repositories")
+  HOME="${_orig_home}"
+  assert_contains "https://github.com/example/testpkg" "${content}"
+}
+
+function test_plugins_add_copies_bundled_registry_as_base() {
+  local _orig_home="${HOME}"
+  local _temp_home="${SHELLX_PLUGINS_D}/add-test-home-base"
+  mkdir -p "${_temp_home}"
+  HOME="${_temp_home}"
+  shellx::plugins::add "testpkg" "https://github.com/example/testpkg" > /dev/null 2>&1
+  local content
+  content=$(cat "${_temp_home}/.config/shellx/plugins.repositories")
+  HOME="${_orig_home}"
+  # The bundled registry contains "community" entry so the copied base should have it
+  assert_contains "community" "${content}"
+}
+
+function test_plugins_add_missing_name_returns_error() {
+  shellx::plugins::add "" "https://github.com/example/testpkg" > /dev/null 2>&1
+  assert_exit_code "1"
+}
+
+function test_plugins_add_missing_url_returns_error() {
+  shellx::plugins::add "testpkg" "" > /dev/null 2>&1
+  assert_exit_code "1"
+}
