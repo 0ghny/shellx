@@ -2,7 +2,7 @@
 
 SHELLX_HOME="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 SHELLX_PLUGINS_D=/tmp/shellx-bashunit-tests
-SHELLX_CONFIG="${SHELLX_HOME}/tests/config/shellx_config"
+SHELLX_CONFIG="${SHELLX_HOME}/tests/config/shellx_config_all_plugins"
 SHELLX_DEBUG=no
 SHELLX_NO_BANNER=1
 export SHELLX_HOME SHELLX_PLUGINS_D SHELLX_DEBUG SHELLX_CONFIG SHELLX_NO_BANNER
