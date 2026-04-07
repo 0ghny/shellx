@@ -199,6 +199,30 @@ shellx::plugins::list() {
 }
 
 # =============================================================================
+# CLI-layer handlers for subcommands that need input validation
+# =============================================================================
+
+#######################################
+# CLI handler for the 'plugins update' subcommand.
+# Validates that a plugin name is supplied, then delegates the git-pull
+# business logic to shellx::plugins::update (plugins.manager.sh).
+# Arguments:
+#   $1 - Plugin package name to update.
+# Returns:
+#   0 on success, 1 if no name given or update fails.
+#######################################
+shellx::cli::plugins::update() {
+  local name="${1:-}"
+
+  if [ -z "${name}" ]; then
+    echo "Usage: shellx plugins update <plugin-name>" >&2
+    return 1
+  fi
+
+  shellx::plugins::update "${name}"
+}
+
+# =============================================================================
 # CLI dispatcher
 # =============================================================================
 
@@ -236,7 +260,7 @@ shellx::cli::plugins() {
       ;;
     update)
       shift
-      shellx::plugins::update "$@"
+      shellx::cli::plugins::update "$@"
       ;;
     export)
       shellx::plugins::export

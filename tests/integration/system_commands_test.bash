@@ -150,6 +150,25 @@ function test_info_lists_wellcome_plugin_as_loaded() {
   assert_contains "wellcome.sh" "${output}"
 }
 
+# --- shellx reset ---
+
+function test_reset_exits_successfully_in_subshell() {
+  (
+    shellx reset < /dev/null > /dev/null 2>&1
+  )
+  assert_exit_code "0"
+}
+
+function test_reset_does_not_crash_when_executed_in_subshell() {
+  local code
+  (
+    shellx reset < /dev/null > /dev/null 2>&1
+  )
+  code=$?
+  [[ "${code}" -eq 0 ]]
+  assert_exit_code "0"
+}
+
 # --- shellx self-update ---
 
 function test_self_update_exits_successfully() {

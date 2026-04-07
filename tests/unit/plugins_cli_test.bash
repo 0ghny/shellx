@@ -18,13 +18,17 @@ source "${SHELLX_HOME}/lib/core/colors.sh"
 # shellcheck source=/dev/null
 source "${SHELLX_HOME}/lib/core/io.sh"
 # shellcheck source=/dev/null
-source "${SHELLX_HOME}/lib/shellx/plugins/plugins.utils.sh"
+source "${SHELLX_HOME}/lib/shellx/plugins/plugins.manager.sh"
+# Keep list tests deterministic without requiring user-level config paths.
+shellx::plugins::config_file_path() { echo "${SHELLX_HOME}/plugins.repositories"; }
+
+# shellx::cli::plugins delegates install/uninstall/update to manager functions.
+# Stub them to assert routing behavior only.
+shellx::plugins::install()   { echo "install-called:$*"; }
+shellx::plugins::uninstall() { echo "uninstall-called:$*"; }
+shellx::plugins::update()    { echo "update-called:$*"; }
 # shellcheck source=/dev/null
 source "${SHELLX_HOME}/lib/shellx/cli/plugins.cli.sh"
-
-# plugins.utils.sh defines a real shellx::plugins::update — override it with
-# the stub after sourcing so the routing test can verify delegation.
-shellx::plugins::update() { echo "update-called:$*"; }
 
 set_up() {
   export __shellx_plugins_d="/tmp/shellx-unit-cli-plugins-d-$$"

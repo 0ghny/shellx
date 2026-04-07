@@ -208,3 +208,58 @@ function test_plugins_sync_shows_summary_line() {
   assert_contains "Sync complete" "${output}"
   unset SHELLX_PLUGINS_MANIFEST
 }
+
+# --- shellx plugins install by registry name (exercises get_url + exists) ---
+
+function test_plugins_install_by_registered_name_succeeds() {
+  shellx plugins install community > /dev/null 2>&1
+  assert_exit_code "0"
+}
+
+function test_plugins_install_by_registered_name_creates_plugin_dir() {
+  shellx plugins install community > /dev/null 2>&1
+  assert_directory_exists "${SHELLX_PLUGINS_D}/shellx-community-plugins"
+}
+
+function test_plugins_install_unknown_registry_name_fails() {
+  shellx plugins install totally-unknown-pkg-xyz-123 > /dev/null 2>&1
+  assert_unsuccessful_code
+}
+
+function test_plugins_install_unknown_registry_name_shows_not_found_message() {
+  local output
+  output=$(shellx plugins install totally-unknown-pkg-xyz-123 2>&1)
+  assert_contains "not found" "${output}"
+}
+
+# --- shellx plugins update (exercises update + name) ---
+
+function test_plugins_update_no_args_returns_error() {
+  shellx plugins update > /dev/null 2>&1
+  assert_exit_code "1"
+}
+
+function test_plugins_update_nonexistent_plugin_shows_not_installed() {
+  local output
+  output=$(shellx plugins update totally-nonexistent-plugin-xyz 2>&1)
+  assert_contains "NOT INSTALLED" "${output}"
+}
+
+function test_plugins_update_nonexistent_plugin_shows_plugin_name_in_output() {
+  local output
+  output=$(shellx plugins update totally-nonexistent-plugin-xyz 2>&1)
+  assert_contains "totally-nonexistent-plugin-xyz" "${output}"
+}
+
+function test_plugins_update_installed_plugin_exits_successfully() {
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  shellx plugins update shellx-community-plugins > /dev/null 2>&1
+  assert_exit_code "0"
+}
+
+function test_plugins_update_installed_plugin_shows_plugin_name_in_output() {
+  shellx plugins install https://github.com/0ghny/shellx-community-plugins > /dev/null 2>&1
+  local output
+  output=$(shellx plugins update shellx-community-plugins 2>&1)
+  assert_contains "shellx-community-plugins" "${output}"
+}

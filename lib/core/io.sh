@@ -8,6 +8,6 @@
 #   0 if the path exists (file or directory), 1 otherwise.
 #######################################
 io::exists() {
-    local _path="${1}"
-    [ -f "${_path}" ] || [ -d "${_path}" ]
+  local _path="${1}"
+  [ -f "${_path}" ] || [ -d "${_path}" ]
 }

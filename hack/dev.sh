@@ -6,6 +6,7 @@ ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 BASHUNIT="${ROOT}/target/bashunit"
 BASHUNIT_VERSION="0.33.0"
 WITH_COVERAGE=0
+WITH_DEBUG=0
 
 # -----------------------------------------------------------------------------
 # Coverage configuration — edit these to tune thresholds and scope
@@ -83,6 +84,11 @@ __run_lint() {
   for f in "${files_to_lint[@]}"; do
     printf "│    %s\n" "${f#"${ROOT}"/}"
   done
+  if [ "${WITH_DEBUG}" -eq 1 ]; then
+    echo "│"
+    echo "│  Debug:"
+    printf "│    %-20s %s\n" "Command:" "shellcheck ${sc_opts[*]} <file>"
+  fi
   echo "└─────────────────────────────────────────────────────────────"
   echo ""
 
@@ -154,8 +160,6 @@ __run_test_suite() {
   for f in "${suite_files[@]}"; do
     printf "│    %s\n" "${f#"${ROOT}"/}"
   done
-  echo "└─────────────────────────────────────────────────────────────"
-  echo ""
 
   local -a extra_opts=()
   if [ "${WITH_COVERAGE}" -eq 1 ]; then
@@ -173,6 +177,15 @@ __run_test_suite() {
     )
     [ -n "${coverage_exclude}" ] && extra_opts+=(--coverage-exclude "${coverage_exclude}")
   fi
+
+  if [ "${WITH_DEBUG}" -eq 1 ]; then
+    echo "│"
+    echo "│  Debug:"
+    printf "│    %-24s %s\n" "Command:" \
+      "${BASHUNIT} ${extra_opts[*]+${extra_opts[*]}} ${suite_dir}"
+  fi
+  echo "└─────────────────────────────────────────────────────────────"
+  echo ""
 
   "${BASHUNIT}" "${extra_opts[@]+"${extra_opts[@]}"}" "${suite_dir}"
 }
@@ -248,6 +261,11 @@ __run_fmt() {
   for f in "${files_to_fmt[@]}"; do
     printf "│    %s\n" "${f#"${ROOT}"/}"
   done
+  if [ "${WITH_DEBUG}" -eq 1 ]; then
+    echo "│"
+    echo "│  Debug:"
+    printf "│    %-20s %s\n" "Command:" "shfmt -d ${shfmt_opts[*]} <file>"
+  fi
   echo "└─────────────────────────────────────────────────────────────"
   echo ""
 
@@ -377,11 +395,13 @@ __ensure_bashunit
 # Enable coverage via env var or --coverage flag
 [ -n "${SHELLX_TEST_COVERAGE:-}" ] && WITH_COVERAGE=1
 
-# Parse --coverage flag from arguments
+# Parse --coverage and --debug flags from arguments
 _args=()
 for _arg in "$@"; do
   if [ "${_arg}" = "--coverage" ]; then
     WITH_COVERAGE=1
+  elif [ "${_arg}" = "--debug" ]; then
+    WITH_DEBUG=1
   else
     _args+=("${_arg}")
   fi
@@ -390,7 +410,7 @@ set -- "${_args[@]+"${_args[@]}"}"
 
 if [ -z "${1:-}" ]; then
   if ! command -v fzf &>/dev/null; then
-    echo "fzf not found. Usage: $(basename "$0") [--coverage] lint|fmt|test-unit|test-integration|test|test-actions [JOB]|all" >&2
+    echo "fzf not found. Usage: $(basename "$0") [--coverage] [--debug] lint|fmt|test-unit|test-integration|test|test-actions [JOB]|all" >&2
     exit 1
   fi
   selected=$(printf 'lint\nfmt\ntest-unit\ntest-integration\ntest\ntest-actions\nall\n' \

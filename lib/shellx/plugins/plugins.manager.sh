@@ -1,6 +1,42 @@
 # shellcheck shell=bash
 
 #######################################
+# Returns the full filesystem path for a given plugin name.
+# Globals:
+#   __shellx_plugins_d - Base directory for user-installed plugins.
+# Arguments:
+#   $1 - Plugin directory name.
+# Outputs:
+#   Writes the full path to stdout.
+#######################################
+shellx::plugins::path() {
+  # shellcheck disable=SC2154
+  echo "${__shellx_plugins_d}/${1}"
+}
+
+#######################################
+# Returns the base name (directory name) of a plugin from its full path.
+# Arguments:
+#   $1 - Full path to the plugin directory.
+# Outputs:
+#   Writes the basename to stdout.
+#######################################
+shellx::plugins::name() {
+  basename "${1}"
+}
+
+#######################################
+# Checks whether a plugin package is installed (directory exists).
+# Arguments:
+#   $1 - Plugin package name.
+# Returns:
+#   0 if installed, 1 otherwise.
+#######################################
+shellx::plugins::is_installed() {
+  io::exists "$(shellx::plugins::path "${1}")"
+}
+
+#######################################
 # Checks whether the given string looks like a URL.
 # Recognized schemes: http://, https://, git@, file://
 # Arguments:
@@ -87,9 +123,9 @@ shellx::plugins::get_url() {
     [[ -z "${name}" ]] && continue
     
     # Trim whitespace
-    name="${name%% }"
-    name="${name## }"
-    
+    name="${name#"${name%%[![:space:]]*}"}"
+    name="${name%"${name##*[![:space:]]}"}"
+
     if [ "${name}" = "${pkg_name}" ]; then
       echo "${url}"
       return 0
@@ -212,7 +248,7 @@ shellx::plugins::uninstall() {
     echo "[PLUGIN] ${plugin_name} not installed"
   else
     echo -n "[PLUGIN] ${plugin_name} uninstalling..."
-    rm -rfv "$(shellx::plugins::path "${plugin_name}")" \
+    rm -rf "$(shellx::plugins::path "${plugin_name}")" \
       2>/dev/null 1>&2 \
     && {
       echo -e " ${_color_green}OK${_color_reset}"
@@ -250,7 +286,7 @@ shellx::plugins::update() {
   for plugin_location in "${list_to_update[@]}"; do
     if io::exists "${plugin_location}" && io::exists "${plugin_location}/.git"; then
       echo -n "[+] Updating $(shellx::plugins::name "${plugin_location}")..."
-      echo git -C "${plugin_location}" pull 2>/dev/null 1>&2 \
+      git -C "${plugin_location}" pull --ff-only 2>/dev/null 1>&2 \
     && {
       echo -e " ${_color_green}OK${_color_reset}"
 
@@ -264,43 +300,4 @@ shellx::plugins::update() {
     fi
     unset plugin_location
   done
-}
-#######################################
-# Adds a new plugin repository entry to the user's registry file.
-# Creates the registry file (copying the bundled one) if it does not exist.
-# Arguments:
-#   $1 - Repository name (identifier).
-#   $2 - Repository clone URL.
-#   $3 - (Optional) Human-readable description.
-# Returns:
-#   0 on success, 1 if name or URL is missing.
-#######################################
-shellx::plugins::add() {
-  local pkg_name="${1}"
-  local pkg_url="${2}"
-  local description="${3:-}"
-  local config_file
-  
-  shellx::log_debug "Adding repository with name '${pkg_name}' and url '${pkg_url}'"
-  # Validate inputs
-  if [ -z "${pkg_name}" ] || [ -z "${pkg_url}" ]; then
-    shellx::log_error "Usage: shellx::plugins::add <name> <url> [description]"
-    return 1
-  fi
-  
-  config_file="${HOME}/.config/shellx/plugins.repositories"
-  
-  # Create directory if it doesn't exist
-  if [ ! -d "${HOME}/.config/shellx" ]; then
-    mkdir -p "${HOME}/.config/shellx"
-  fi
-  
-  # Copy default repositories if user config doesn't exist
-  if [ ! -f "${config_file}" ]; then
-    cp "${__shellx_libdir}/shellx/plugins.repositories" "${config_file}"
-  fi
-  
-  # Add new repository
-  echo "${pkg_name}|${pkg_url}|${description}" >> "${config_file}"
-  shellx::log_info "Repository '${pkg_name}' added successfully at ${config_file}"
 }
