@@ -115,7 +115,7 @@ shellx::log_debug "Variable __shellx_config:      ${__shellx_config}"
 shellx::log_info "Feature: home-extra"
 if [ -z "${SHELLX_SKIP_EXTRA}" ]; then
   shellx::log_debug "feat(home-extra): enabled"
-  for file_to_load in "${HOME}"/.{path,exports,aliases,functions,extra}; do
+  for file_to_load in "${HOME}"/.{exports,path,aliases,functions,extra}; do
     if [ -r "${file_to_load}" ]; then
       shellx::log_debug "feat(home-extra): loading file ${file_to_load}"
       # shellcheck source=/dev/null
